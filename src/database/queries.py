@@ -1,10 +1,9 @@
-from random import choice
 from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from src.database.connect import get_session, engine
+from src.database.connect import create_session, engine
 from src.database.models import (
     Base,
     UserModel,
@@ -12,83 +11,89 @@ from src.database.models import (
     ProductModel,
     OrderItemModel,
 )
+from src.schemas.schemas import CreateProductSchema, UpdateProductSchema
 
 
-def create_tables():
-    engine.echo = False
-    Base.metadata.drop_all(engine)
-    Base.metadata.create_all(engine)
+async def create_tables():
+    async with engine.begin() as conn:
+        engine.echo = False
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    return {"message": "Tables created."}
 
 
-create_tables()
-
-
-def create_products(
-    title: str, quantity: int, price: Decimal, description: str
+async def create_products(
+    product: CreateProductSchema,
 ):
-    with get_session() as session:
+    async with create_session() as session:
         try:
             product = ProductModel(
-                title=title,
-                quantity=quantity,
-                price=price,
-                description=description,
+                title=product.title,
+                quantity=product.quantity,
+                price=Decimal(product.price),
+                description=product.description,
             )
             session.add(product)
-            session.commit()
+            await session.commit()
         except Exception as e:
-            session.rollback()
+            await session.rollback()
             raise e
 
 
-def update_product_in_db(product_id, data):
-    with get_session() as session:
+async def update_product_in_db(product_id, data):
+    async with create_session() as session:
         try:
-            product = session.query(ProductModel).get(product_id)
+            result = await session.execute(
+                select(ProductModel).where(ProductModel.id == product_id)
+            )
+            product = result.scalar_one_or_none()
+            if not product:
+                raise ValueError(f"Product {product_id} not found")
+
             product.title = data["title"]
             product.quantity = data["quantity"]
             product.price = data["price"]
             product.description = data["description"]
-            session.add_all(
-                [
-                    product.title,
-                    product.quantity,
-                    product.price,
-                    product.description,
-                ]
-            )
-            session.commit()
+
+            await session.commit()
+            await session.refresh(product)
+            return product
         except Exception as e:
-            session.rollback()
+            await session.rollback()
             raise e
 
 
-def create_user(name: str, email: str, balance: Decimal = None):
-    with get_session() as session:
+async def create_user(name: str, email: str, balance: Decimal = None):
+    async with create_session() as session:
         try:
             user = UserModel(name=name, email=email, balance=balance)
             session.add(user)
-            session.commit()
+            await session.commit()
             return user
         except Exception as e:
-            session.rollback()
+            await session.rollback()
             raise e
 
 
-def create_order(user_id: int, products: list[tuple[int, int]]):
-    with get_session() as session:
+async def create_order(user_id: int, products: list[tuple[int, int]]):
+    async with create_session() as session:
         try:
             order = OrderModel(user_id=user_id, total=Decimal(0))
             session.add(order)
-            session.flush()  # получить номер заказа
+            await session.flush()
 
             total_sum = Decimal(0)
-            for products_id, quantity in products:
-                product = session.get(ProductModel, products_id)
+            for product_id, quantity in products:
+                result = await session.execute(
+                    select(ProductModel).where(ProductModel.id == product_id)
+                )
+                product = result.scalar_one_or_none()
                 if not product:
-                    raise ValueError(f"Product {products_id} not found")
+                    raise ValueError(f"Product {product_id} not found")
+
                 item_total = product.price * quantity
                 total_sum += item_total
+
                 order_item = OrderItemModel(
                     order_id=order.id,
                     product_id=product.id,
@@ -98,17 +103,18 @@ def create_order(user_id: int, products: list[tuple[int, int]]):
                 session.add(order_item)
 
             order.total = total_sum
-            session.commit()
-            session.refresh(order)
+            await session.commit()
+            await session.refresh(order)
             return order
         except Exception as e:
-            session.rollback()
+            await session.rollback()
             raise e
 
 
-def get_all_products_from_db():
-    with get_session() as session:
-        products = session.query(ProductModel).all()
+async def get_all_products_from_db():
+    async with create_session() as session:
+        result = await session.execute(select(ProductModel))
+        products = result.scalars().all()
         return [
             {
                 "id": product.id,
@@ -120,95 +126,96 @@ def get_all_products_from_db():
         ]
 
 
-def get_product_by_id_from_db(product_id: int):
-    with get_session() as session:
-        try:
-            product = (
-                session.query(ProductModel)
-                .where(ProductModel.id == product_id)
-                .first()
-            )
-            if not product:
-                raise ValueError(f"Product {product_id} not found")
-            return {
-                "id": product.id,
-                "title": product.title,
-                "quantity": product.quantity,
-                "price": float(product.price),
-                "description": product.description,
-            }
-        except Exception as e:
-            raise e
+async def get_product_by_id_from_db(product_id: int):
+    async with create_session() as session:
+        result = await session.execute(
+            select(ProductModel).where(ProductModel.id == product_id)
+        )
+        product = result.scalar_one_or_none()
+        return product
 
 
-def get_user_orders(user_id: int):
-    with get_session() as session:
-        user = (
-            session.query(UserModel)
+async def update_product_query(product_name: str, update: UpdateProductSchema):
+    async with create_session() as session:
+        result = await session.execute(
+            select(ProductModel).where(ProductModel.title == product_name)
+        )
+        product = result.scalar_one_or_none()
+        if not product:
+            raise ValueError(f"Product {product_name} not found")
+
+        # Обновляем только непустые поля
+        if update.title is not None:
+            product.title = update.title
+        if update.quantity is not None:
+            product.quantity = update.quantity
+        if update.price is not None:
+            product.price = Decimal(update.price)
+        if update.description is not None:
+            product.description = update.description
+
+        await session.commit()
+        await session.refresh(product)
+        return product
+
+
+async def delete_product_query(product_name: str):
+    async with create_session() as session:
+        result = await session.execute(
+            select(ProductModel).where(ProductModel.title == product_name)
+        )
+        product = result.scalar_one_or_none()
+        if not product:
+            return None
+        await session.delete(product)
+        await session.commit()
+        return {"message": "Product deleted"}
+
+
+async def get_user_orders(user_id: int):
+    async with create_session() as session:
+        result = await session.execute(
+            select(UserModel)
             .options(
                 joinedload(UserModel.orders).joinedload(OrderModel.products)
             )
-            .filter(UserModel.id == user_id)
-            .first()
+            .where(UserModel.id == user_id)
         )
+        user = result.unique().scalar_one_or_none()
 
         if not user:
             return None
 
-        result = []
+        orders_data = []
         for order in user.orders:
             products = [
                 {
                     "id": product.id,
                     "title": product.title,
-                    "price": product.price,
+                    "price": float(product.price),
                 }
                 for product in order.products
             ]
-            result.append(
+            orders_data.append(
                 {
                     "order_id": order.id,
-                    "total": order.total,
+                    "total": float(order.total),
                     "created_at": order.created_at,
                     "products": products,
                 }
             )
-        return result
+        return orders_data
 
 
-def update_order_status(order_id: int, status: str):
-    with get_session() as session:
-        order = (
-            session.query(OrderModel).filter(OrderModel.id == order_id).first()
+async def update_order_status(order_id: int, status: str):
+    async with create_session() as session:
+        result = await session.execute(
+            select(OrderModel).where(OrderModel.id == order_id)
         )
+        order = result.scalar_one_or_none()
         if not order:
             raise ValueError(f"Order {order_id} not found")
         if order.status == status:
             raise ValueError(f"Order {order_id} already {status}")
         order.status = status
-        session.commit()
-
-
-create_products(
-    title="MacBook air m3", quantity=10, price=Decimal(1000), description="M3"
-)
-create_products(
-    title="iMac M4", quantity=10, price=Decimal(1900), description="M4"
-)
-create_user(name="Alice", email="alice@examle.com", balance=Decimal(10000.00))
-create_user(name="Bob", email="bob@example.com")
-
-# Для имитации заказа, рандомный выбор между двумя пользователями
-user_ids = [1, 2]
-# Рандомный выбор между двумя товарами
-product_ids = [1, 2]
-
-
-for order in range(1, 101):
-    create_order(user_id=choice(user_ids), products=[(choice(product_ids), 1)])
-
-
-print(get_user_orders(user_id=1))
-print(get_user_orders(user_id=2))
-print(get_all_products_from_db())
-print(get_product_by_id_from_db(product_id=1))
+        await session.commit()
