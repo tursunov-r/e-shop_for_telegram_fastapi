@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SFMShop - Админ-панель</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form {
+            max-width: 500px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<h1>Админ-панель SFMShop</h1>
+<form id="productForm">
+    <div>
+        <label for="name">Название товара:</label>
+        <input type="text" id="name" name="name" required>
+    </div>
+    <div>
+        <label for="price">Цена:</label>
+        <input type="number" id="price" name="price" step="0.01" required>
+    </div>
+    <div>
+        <label for="stock">Количество на складе:</label>
+        <input type="number" id="stock" name="stock" required>
+    </div>
+    <div>
+        <label for="description">Описание товара</label>
+    </div>
+    <textarea id="description" name="description"></textarea>
+    <div>
+        <button type="submit">Добавить товар</button>
+    </div>
+    <div>
+        <button id="getProductBtn"><a href="get_product.html">Показать весь товар</a></button>
+    </div>
+    <div id="productList"></div>
+</form>
+<div id="message"></div>
+<script>
+    document.getElementById('productForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const formData = {
+            title: document.getElementById('name').value,
+            price: parseFloat(document.getElementById('price').value),
+            quantity: parseInt(document.getElementById('stock').value),
+            description: document.getElementById('description').value
+        };
+
+        try {
+            const response = await fetch('http://localhost:8000/api/v1/products/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData),
+                credentials: 'include' // чтобы браузер отправлял куки
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                document.getElementById('message').textContent =
+                    `Товар успешно создан! ID: ${result.id}`;
+            } else {
+                document.getElementById('message').textContent =
+                    'Ошибка при создании товара';
+            }
+        } catch (error) {
+            document.getElementById('message').textContent =
+                `Ошибка: ${error.message}`;
+        }
+    });
+</script>
+</body>
+</html>

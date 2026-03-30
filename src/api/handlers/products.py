@@ -1,10 +1,9 @@
 import json
 from decimal import Decimal
-from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Header
-from starlette.responses import Response
+from fastapi import APIRouter, HTTPException, status, Response, Cookie
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import ProductModel
 from src.database.queries import (
@@ -16,6 +15,7 @@ from src.database.queries import (
 )
 from src.database.connect import engine
 from src.schemas.schemas import CreateProductSchema, UpdateProductSchema
+from src.utils.auth import config
 
 router_v1 = APIRouter(prefix="/api/v1/products", tags=["products v1"])
 router_v2 = APIRouter(prefix="/api/v2/products", tags=["products v2"])
@@ -23,14 +23,19 @@ router_v2 = APIRouter(prefix="/api/v2/products", tags=["products v2"])
 
 @router_v1.post("/", status_code=status.HTTP_201_CREATED)
 async def create_product(
-    product: CreateProductSchema, authorization: Optional[str] = Header(None)
+    product: CreateProductSchema,
+    authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
 ):
     """Создание товара
     - **title**: название товара
     - **description**: описание товара
     - **price**: стоимость товара
-    - **quantity**: количество на складе"""
+    - **quantity**: количество на складе
+    - **Необходима авторизация через http://0.0.0.0:8000/api/v1/users/login**
+    """
     try:
+        # if not authorization:
+        #     raise HTTPException(status_code=401, detail="Invalid credentials")
         if product.price < 0:
             raise HTTPException(
                 status_code=400, detail="Price cannot be negative"
@@ -69,7 +74,7 @@ async def get_products():
     return Response(
         content=json.dumps({"products": products}),
         media_type="application/json",
-        headers={"cache-control": "3600"},
+        headers={"cache-control": "max-age=3600"},
     )
 
 
@@ -78,9 +83,12 @@ async def get_products():
     status_code=status.HTTP_204_NO_CONTENT | status.HTTP_404_NOT_FOUND,
 )
 async def delete_product(
-    product_title: str, authorization: Optional[str] = Header(None)
+    product_title: str,
+    authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
 ):
     try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
         result = await delete_product_query(product_name=product_title)
         if not result:
             raise HTTPException(status_code=404, detail="Product not found")
@@ -96,20 +104,26 @@ async def delete_product(
 async def update_product(
     product_id: int,
     update: UpdateProductSchema,
-    authorization: Optional[str] = Header(None),
+    authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
 ):
     """Обновление товара
     - **title**: Название товара
     - **description**: Описание товара
     - **price**: Стоимость товара
     - **quantity**: Наличие на складе
-    Необходимо передать весь json"""
-    async with engine.begin() as conn:
+    - Необходимо передать весь json
+    - **Необходима авторизация через http://0.0.0.0:8000/api/v1/users/login**
+    """
+    async with AsyncSession(engine) as conn:
         try:
+            if not authorization:
+                raise HTTPException(
+                    status_code=401, detail="Invalid credentials"
+                )
             result = await conn.execute(
                 select(ProductModel).where(ProductModel.id == product_id)
             )
-            product = result.scalar_one_or_none()
+            product = result.scalars().first()
             if not product:
                 raise HTTPException(
                     status_code=404, detail=f"Product {product_id} not found"
@@ -139,15 +153,19 @@ async def update_product(
 async def update_product(
     product_name: str,
     product: UpdateProductSchema,
-    authorization: Optional[str] = Header(None),
+    authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
 ):
     """Обновление товара в базе данных по названию товара
     - **title**: название товара
     - **description**: описание товара
     - **price**: стоимость товара
     - **quantity**: наличие на складе
-    данные не переданные в json не будут изменены"""
+    данные не переданные в json не будут изменены
+    - **Необходима авторизация через http://0.0.0.0:8000/api/v1/users/login**
+    """
     try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
         await update_product_query(product_name=product_name, update=product)
         return {
             "message": f"Product updated {product_name} successfully",

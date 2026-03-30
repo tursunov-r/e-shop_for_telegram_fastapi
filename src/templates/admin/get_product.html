@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Все товары</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form {
+            max-width: 500px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<h1>Все товары:</h1>
+<div id="productsList"></div>
+<a href="create_product.html">Назад к созданию товара</a>
+<script>
+    window.addEventListener('DOMContentLoaded', async function () {
+    try {
+        const response = await fetch('http://localhost:8000/api/v1/products/', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            const listContainer = document.getElementById('productsList');
+            const data = await response.json();
+            const products = data.products;
+            let table = '<table border="1" cellpadding="5"><tr><th>ID</th><th>Название</th><th>Цена</th><th>Количество</th><th>Описание</th></tr>';
+            products.forEach(product => {
+                table += `<tr>
+                    <td>${product.id}</td>
+                    <td>${product.title}</td>
+                    <td>${product.price}</td>
+                    <td>${product.quantity}</td>
+                    <td>${product.description}</td>
+                </tr>`;
+            });
+            table += '</table>';
+            listContainer.innerHTML = table;
+        } else {
+            document.getElementById('productsList').textContent = 'Ошибка при получении списка товаров';
+        }
+    } catch (error) {
+        document.getElementById('productsList').textContent = `Ошибка: ${error.message}`;
+    }
+});
+
+</script>
+</body>
+</html>
