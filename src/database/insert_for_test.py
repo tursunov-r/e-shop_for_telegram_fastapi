@@ -1,12 +1,13 @@
+import random
 from random import choice
 from decimal import Decimal
 
 from src.database.queries import (
-    create_products,
-    create_user,
-    create_order,
+    create_products_query,
+    create_user_query,
+    create_order_query,
 )
-from src.schemas.schemas import CreateProductSchema
+from src.schemas.schemas import CreateProductSchema, ProductItem
 
 products = [
     {
@@ -27,11 +28,11 @@ products = [
 async def create_data():
     for product in products:
         schema = CreateProductSchema(**product)
-        await create_products(schema)
-    await create_user(
+        await create_products_query(schema)
+    await create_user_query(
         name="Alice", email="alice@examle.com", balance=Decimal(10000.00)
     )
-    await create_user(name="Bob", email="bob@example.com")
+    await create_user_query(name="Bob", email="bob@example.com")
 
     # Для имитации заказа, рандомный выбор между двумя пользователями
     user_ids = [1, 2]
@@ -39,6 +40,12 @@ async def create_data():
     product_ids = [1, 2]
 
     for order in range(1, 101):
-        await create_order(
-            user_id=choice(user_ids), products=[(choice(product_ids), 1)]
+        await create_order_query(
+            user_id=choice(user_ids),
+            products=[
+                ProductItem(
+                    product_id=(choice(product_ids)),
+                    quantity=random.randint(1, 10),
+                )
+            ],
         )

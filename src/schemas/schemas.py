@@ -1,29 +1,57 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CreateProductSchema(BaseModel):
-    title: str
-    description: str
-    price: float
-    quantity: int
+    title: str = Field(
+        ...,
+        min_length=3,
+        max_length=100,
+        description="The title of the product.",
+    )
+    description: str = Field(
+        ...,
+        min_length=0,
+        max_length=100,
+        description="The description of the product.",
+    )
+    price: float = Field(..., ge=1, description="The price of the product.")
+    quantity: int = Field(
+        ..., ge=0, description="The quantity of the product."
+    )
 
 
 class UpdateProductSchema(BaseModel):
     id: int
-    title: str
+    title: str = Field(
+        ...,
+        min_length=3,
+        max_length=100,
+        description="The title of the product.",
+    )
     description: str | None
     price: float
     quantity: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
-class ProductSchema(BaseModel):
-    title: str | None = None
-    description: str | None = None
-    price: float | None = None
-    quantity: int | None = None
+class ProductItem(BaseModel):
+    product_id: int
+    quantity: int
+
+
+class CreateOrderSchema(BaseModel):
+    user_id: int
+    product_ids: list[ProductItem]
+
+    class Config:
+        from_attributes = True
+
+
+class UpdateOrderSchema(BaseModel):
+    order_id: int
+    status: str
 
 
 class UserLoginSchema(BaseModel):

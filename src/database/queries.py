@@ -11,7 +11,11 @@ from src.database.models import (
     ProductModel,
     OrderItemModel,
 )
-from src.schemas.schemas import CreateProductSchema, UpdateProductSchema
+from src.schemas.schemas import (
+    CreateProductSchema,
+    UpdateProductSchema,
+    ProductItem,
+)
 
 
 async def create_tables():
@@ -22,7 +26,7 @@ async def create_tables():
     return {"message": "Tables created."}
 
 
-async def create_products(
+async def create_products_query(
     product: CreateProductSchema,
 ):
     async with create_session() as session:
@@ -40,7 +44,7 @@ async def create_products(
             raise e
 
 
-async def update_product_in_db(product_id, data):
+async def update_product_in_db_query(product_id, data):
     async with create_session() as session:
         try:
             result = await session.execute(
@@ -63,7 +67,7 @@ async def update_product_in_db(product_id, data):
             raise e
 
 
-async def create_user(name: str, email: str, balance: Decimal = None):
+async def create_user_query(name: str, email: str, balance: Decimal = None):
     async with create_session() as session:
         try:
             user = UserModel(name=name, email=email, balance=balance)
@@ -75,7 +79,7 @@ async def create_user(name: str, email: str, balance: Decimal = None):
             raise e
 
 
-async def create_order(user_id: int, products: list[tuple[int, int]]):
+async def create_order_query(user_id: int, products: list[ProductItem]):
     async with create_session() as session:
         try:
             order = OrderModel(user_id=user_id, total=Decimal(0))
@@ -83,21 +87,23 @@ async def create_order(user_id: int, products: list[tuple[int, int]]):
             await session.flush()
 
             total_sum = Decimal(0)
-            for product_id, quantity in products:
+            for item in products:
                 result = await session.execute(
-                    select(ProductModel).where(ProductModel.id == product_id)
+                    select(ProductModel).where(
+                        ProductModel.id == item.product_id
+                    )
                 )
                 product = result.scalar_one_or_none()
                 if not product:
-                    raise ValueError(f"Product {product_id} not found")
+                    raise ValueError(f"Product {item.product_id} not found")
 
-                item_total = product.price * quantity
+                item_total = product.price * item.quantity
                 total_sum += item_total
 
                 order_item = OrderItemModel(
                     order_id=order.id,
                     product_id=product.id,
-                    quantity=quantity,
+                    quantity=item.quantity,
                     total=item_total,
                 )
                 session.add(order_item)
@@ -111,7 +117,52 @@ async def create_order(user_id: int, products: list[tuple[int, int]]):
             raise e
 
 
-async def get_all_products_from_db():
+async def get_all_orders_query():
+    async with create_session() as session:
+        result = await session.execute(select(OrderModel))
+        orders = result.scalars().all()
+        return orders
+
+
+async def get_order_by_id_query(order_id):
+    async with create_session() as session:
+        result = await session.execute(
+            select(OrderModel).where(OrderModel.id == order_id)
+        )
+        order = result.scalar_one_or_none()
+        if order:
+            return order
+        return None
+
+
+async def get_order_items_query(order_id):
+    async with create_session() as session:
+        result = await session.execute(
+            select(OrderItemModel).where(OrderItemModel.order_id == order_id)
+        )
+        order_items = result.scalars().all()
+        if order_items:
+            return order_items
+        return None
+
+
+async def update_order_query(order_id: int, status: str = None):
+    async with create_session() as session:
+        result = await session.execute(
+            select(OrderModel).where(OrderModel.id == order_id)
+        )
+        order = result.scalar_one_or_none()
+        if not order:
+            return None
+        if status is not None:
+            order.status = status
+        session.add(order)
+        await session.commit()
+        await session.refresh(order)
+        return order
+
+
+async def get_all_products_from_db_query():
     async with create_session() as session:
         result = await session.execute(select(ProductModel))
         products = result.scalars().all()
@@ -126,7 +177,7 @@ async def get_all_products_from_db():
         ]
 
 
-async def get_product_by_id_from_db(product_id: int):
+async def get_product_by_id_from_db_query(product_id: int):
     async with create_session() as session:
         result = await session.execute(
             select(ProductModel).where(ProductModel.id == product_id)
@@ -172,7 +223,7 @@ async def delete_product_query(product_name: str):
         return {"message": "Product deleted"}
 
 
-async def get_user_orders(user_id: int):
+async def get_user_orders_query(user_id: int):
     async with create_session() as session:
         result = await session.execute(
             select(UserModel)
@@ -207,7 +258,7 @@ async def get_user_orders(user_id: int):
         return orders_data
 
 
-async def update_order_status(order_id: int, status: str):
+async def update_order_status_query(order_id: int, status: str):
     async with create_session() as session:
         result = await session.execute(
             select(OrderModel).where(OrderModel.id == order_id)

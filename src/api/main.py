@@ -1,25 +1,46 @@
+import time
+import logging
 from contextlib import asynccontextmanager
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from starlette.middleware.cors import CORSMiddleware
 
 from src.api.handlers.products import router_v1, router_v2
 from src.api.handlers.auth import router_v1 as auth_v1
+from src.api.handlers.orders import router as orders_router_v1
 from src.database.insert_for_test import create_data
 from src.database.queries import create_tables
+
+# Анализ требований проекта SFMShop:
+# - Нужен REST API для мобильного приложения, телеграм бота
+# - Высокая производительность важна
+# - Нужна автоматическая документация
+# - Используется async/await для работы с БД
+# - Не нужна админ-панель из коробки
+
+# Выбор: FastAPI
+# Обоснование:
+# 1. FastAPI отлично подходит для REST API
+# 2. Высокая производительность (async/await)
+# 3. Автоматическая документация (Swagger)
+# 4. Простой синтаксис
+# 5. Поддержка async/await из коробки
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await create_tables()
     await create_data()
-    routers = [router_v1, router_v2, auth_v1]
+    routers = [router_v1, router_v2, auth_v1, orders_router_v1]
     for router in routers:
         app.include_router(router)
     yield
 
 
 app = FastAPI(lifespan=lifespan)
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,6 +49,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Middleware для логирования запросов"""
+    start_time = time.time()
+
+    # Логирование запроса
+    logger.info(f"Запрос: {request.method} {request.url.path}")
+
+    # Обработка запроса
+    response = await call_next(request)
+
+    # Логирование ответа
+    process_time = time.time() - start_time
+    logger.info(
+        f"Ответ: {response.status_code}, время: {process_time:.3f} сек"
+    )
+
+    # Добавление заголовка с временем обработки
+    response.headers["X-Process-Time"] = str(process_time)
+
+    return response
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

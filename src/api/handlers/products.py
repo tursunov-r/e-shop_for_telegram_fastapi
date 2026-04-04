@@ -7,11 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import ProductModel
 from src.database.queries import (
-    get_all_products_from_db,
-    get_product_by_id_from_db,
-    create_products,
+    create_products_query,
     update_product_query,
     delete_product_query,
+    get_product_by_id_from_db_query,
+    get_all_products_from_db_query,
 )
 from src.database.connect import engine
 from src.schemas.schemas import CreateProductSchema, UpdateProductSchema
@@ -44,7 +44,7 @@ async def create_product(
             raise HTTPException(
                 status_code=400, detail="Quantity cannot be negative"
             )
-        await create_products(
+        await create_products_query(
             product=product,
         )
         return {
@@ -60,7 +60,7 @@ async def create_product(
 @router_v1.get("/{id}", status_code=status.HTTP_200_OK)
 async def get_product_by_id(product_id: int):
     try:
-        product = await get_product_by_id_from_db(product_id)
+        product = await get_product_by_id_from_db_query(product_id)
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
         return product
@@ -70,7 +70,7 @@ async def get_product_by_id(product_id: int):
 
 @router_v1.get("/", status_code=status.HTTP_200_OK)
 async def get_products():
-    products = await get_all_products_from_db()
+    products = await get_all_products_from_db_query()
     return Response(
         content=json.dumps({"products": products}),
         media_type="application/json",
