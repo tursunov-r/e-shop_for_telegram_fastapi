@@ -1,39 +1,44 @@
 import datetime
 import json
 import redis
-from psycopg_learn.src.database.queries import (
-    get_all_products_from_db,
-    update_product_in_db,
-    get_product_by_id_from_db,
+from src.database.queries import (
+    get_all_products_from_db_query,
+    update_product_in_db_query,
+    get_product_by_id_from_db_query,
 )
-from psycopg_learn.src.session.generate_session import generate_user_session
-
+from src.session.generate_session import generate_user_session
 
 redis_client = redis.Redis(
     host="localhost", port=6379, db=0, decode_responses=True
 )
 
 
-def get_cached_products():
+async def get_cached_products():
     cache = redis_client.get("products:all")
     if cache:
-        return json.loads(cache)
-    products = get_all_products_from_db()
-    redis_client.setex("products:all", 3600, json.dumps(products))
+        return json.loads(await cache)
+    products = await get_all_products_from_db_query()
+    result = await redis_client.setex(
+        "products:all", 3600, json.dumps(products)
+    )
+    return result
 
 
-def update_product(product_id, data):
-    update_product_in_db(product_id, data)
-    redis_client.delete(f"products:{product_id}")
-    redis_client.delete("products:all")
+async def update_product(product_id, data):
+    await update_product_in_db_query(product_id, data)
+    await redis_client.delete(f"products:{product_id}")
+    await redis_client.delete("products:all")
 
 
-def get_cached_by_id(product_id):
-    cache = redis_client.get(f"products:{product_id}")
+async def get_cached_by_id(product_id):
+    cache = await redis_client.get(f"products:{product_id}")
     if cache:
         return json.loads(cache)
-    products = get_product_by_id_from_db(product_id)
-    redis_client.setex(f"products:{product_id}", 3600, json.dumps(products))
+    products = await get_product_by_id_from_db_query(product_id)
+    result = await redis_client.setex(
+        f"products:{product_id}", 3600, json.dumps(products)
+    )
+    return result
 
 
 def create_user_session(user_id):
@@ -50,8 +55,8 @@ def create_user_session(user_id):
     return session_data
 
 
-def get_user_session(session_token):
-    session = redis_client.get(f"users:{session_token}")
+async def get_user_session(session_token):
+    session = await redis_client.get(f"users:{session_token}")
     if session:
         return json.loads(session)
     return None
