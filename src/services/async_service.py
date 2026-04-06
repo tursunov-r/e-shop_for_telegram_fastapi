@@ -2,8 +2,7 @@ import asyncio
 import time
 from random import choice
 
-from psycopg_learn.src.database.queries import update_order_status
-
+from src.database.queries import update_order_status_query
 
 statuses = ["created", "rady to ship", "delivery", "processed"]
 
@@ -11,7 +10,7 @@ statuses = ["created", "rady to ship", "delivery", "processed"]
 async def process_order_async(order_id: int, status: str) -> dict:
     try:
         await asyncio.sleep(0.1)  # имитация запроса
-        update_order_status(order_id, status)
+        await update_order_status_query(order_id, status)
         return {"message": f"Order {order_id} status is {status}."}
     except Exception as e:
         return {"message": f"Something went wrong. {str(e)}"}
