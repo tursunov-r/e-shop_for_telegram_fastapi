@@ -26,38 +26,26 @@ async def create_product(
     product: CreateProductSchema,
     authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
 ):
-    """Создание товара
-    - **title**: название товара
-    - **description**: описание товара
-    - **price**: стоимость товара
-    - **quantity**: количество на складе
-    - **Необходима авторизация через http://0.0.0.0:8000/api/v1/users/login**
-    """
-    try:
-        # if not authorization:
-        #     raise HTTPException(status_code=401, detail="Invalid credentials")
-        if product.price < 0:
-            raise HTTPException(
-                status_code=400, detail="Price cannot be negative"
-            )
-        if product.quantity < 0:
-            raise HTTPException(
-                status_code=400, detail="Quantity cannot be negative"
-            )
-        await create_products_query(
-            product=product,
-        )
-        return {
-            "message": "Product created successfully",
-            "status": status.HTTP_201_CREATED,
-        }
-    except HTTPException as e:
+    # if not authorization:
+    #     raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    if product.price < 0:
+        raise HTTPException(status_code=400, detail="Price cannot be negative")
+
+    if product.quantity < 0:
         raise HTTPException(
-            status_code=400, detail=f"Something went wrong: {e}"
+            status_code=400, detail="Quantity cannot be negative"
         )
 
+    await create_products_query(product=product)
 
-@router_v1.get("/{id}", status_code=status.HTTP_200_OK)
+    return {
+        "message": "Product created successfully",
+        "status": status.HTTP_201_CREATED,
+    }
+
+
+@router_v1.get("/{product_id}", status_code=status.HTTP_200_OK)
 async def get_product_by_id(product_id: int):
     try:
         product = await get_product_by_id_from_db_query(product_id)
@@ -78,10 +66,7 @@ async def get_products():
     )
 
 
-@router_v1.delete(
-    "/{product_title}",
-    status_code=status.HTTP_204_NO_CONTENT | status.HTTP_404_NOT_FOUND,
-)
+@router_v1.delete("/{product_title}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product(
     product_title: str,
     authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
@@ -92,7 +77,7 @@ async def delete_product(
         result = await delete_product_query(product_name=product_title)
         if not result:
             raise HTTPException(status_code=404, detail="Product not found")
-        return status.HTTP_204_NO_CONTENT
+        return Response(status_code=204)
     except HTTPException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -145,11 +130,12 @@ async def update_product(
 
             await conn.commit()
             await conn.refresh(product)
+            return {"message": "Product updated successfully"}
         except HTTPException as e:
             raise e
 
 
-@router_v2.patch("/{product_title}", status_code=status.HTTP_200_OK)
+@router_v2.patch("/{product_name}", status_code=status.HTTP_200_OK)
 async def update_product(
     product_name: str,
     product: UpdateProductSchema,
