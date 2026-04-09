@@ -8,7 +8,8 @@ from starlette.middleware.cors import CORSMiddleware
 from src.api.handlers.products import router_v1, router_v2
 from src.api.handlers.auth import router_v1 as auth_v1
 from order_service.src.api.routers.orders import router as orders_router_v1
-from src.database.insert_for_test import create_data
+
+# from src.database.insert_for_test import create_data
 from src.database.queries import create_tables
 
 # Анализ требований проекта SFMShop:
@@ -30,14 +31,16 @@ from src.database.queries import create_tables
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await create_tables()
-    await create_data()
-    routers = [router_v1, router_v2, auth_v1, orders_router_v1]
-    for router in routers:
-        app.include_router(router)
+    # await create_data()
     yield
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+routers = [router_v1, router_v2, auth_v1, orders_router_v1]
+for router in routers:
+    app.include_router(router)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

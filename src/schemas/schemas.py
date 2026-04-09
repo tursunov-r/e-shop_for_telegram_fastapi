@@ -14,7 +14,7 @@ class CreateProductSchema(BaseModel):
         max_length=100,
         description="The description of the product.",
     )
-    price: float = Field(..., ge=1, description="The price of the product.")
+    price: float = Field(..., description="The price of the product.")
     quantity: int = Field(
         ..., ge=0, description="The quantity of the product."
     )
