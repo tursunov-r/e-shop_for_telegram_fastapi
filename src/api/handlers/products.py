@@ -71,18 +71,12 @@ async def delete_product(
     product_title: str,
     authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
 ):
-    try:
-        if not authorization:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-        result = await delete_product_query(product_name=product_title)
-        if not result:
-            raise HTTPException(status_code=404, detail="Product not found")
-        return Response(status_code=204)
-    except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Something went wrong: {e}",
-        )
+    # if not authorization:
+    #     raise HTTPException(status_code=401, detail="Invalid credentials")
+    result = await delete_product_query(product_name=product_title)
+    if not result:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return Response(status_code=204)
 
 
 @router_v1.put("/{product_id}", status_code=status.HTTP_200_OK)

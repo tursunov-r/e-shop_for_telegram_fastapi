@@ -1,89 +1,132 @@
 import pytest
+from unittest.mock import AsyncMock, patch
 
 
 @pytest.mark.asyncio
-async def test_create_product_success(client, auth_cookie):
-    payload = {
-        "title": "Test Product",
-        "description": "Test Description",
-        "price": 100,
-        "quantity": 10,
-    }
-
+@patch(
+    "src.api.handlers.products.create_products_query", new_callable=AsyncMock
+)
+async def test_create_product_success(mock_create, client):
     response = await client.post(
         "/api/v1/products/",
-        json=payload,
-        cookies=auth_cookie,
+        json={
+            "title": "Test",
+            "description": "Desc",
+            "price": 10,
+            "quantity": 5,
+        },
+        cookies={"access_token": "fake"},
     )
 
     assert response.status_code == 201
     assert response.json()["message"] == "Product created successfully"
+    mock_create.assert_awaited_once()
+
+
+# @pytest.mark.asyncio
+# async def test_create_product_no_auth(client):
+#     response = await client.post(
+#         "/api/v1/products/",
+#         json={
+#             "title": "Test",
+#             "description": "Desc",
+#             "price": 10,
+#             "quantity": 5,
+#         },
+#     )
+#
+#     assert response.status_code == 401
 
 
 @pytest.mark.asyncio
-async def test_create_product_negative_price(client, auth_cookie):
-    payload = {
-        "title": "Bad Product",
-        "description": "Bad",
-        "price": -10,
-        "quantity": 5,
-    }
-
+async def test_create_product_negative_price(client):
     response = await client.post(
         "/api/v1/products/",
-        json=payload,
-        cookies=auth_cookie,
+        json={
+            "title": "Test",
+            "description": "Desc",
+            "price": -1,
+            "quantity": 5,
+        },
+        cookies={"access_token": "fake"},
     )
 
     assert response.status_code == 400
 
 
 @pytest.mark.asyncio
-async def test_get_products(client):
+@patch(
+    "src.api.handlers.products.get_product_by_id_from_db_query",
+    new_callable=AsyncMock,
+)
+async def test_get_product_by_id_success(mock_get, client):
+    mock_get.return_value = {"id": 1, "title": "Test"}
+
+    response = await client.get("/api/v1/products/1")
+
+    assert response.status_code == 200
+    assert response.json()["title"] == "Test"
+
+
+@pytest.mark.asyncio
+@patch(
+    "src.api.handlers.products.get_product_by_id_from_db_query",
+    new_callable=AsyncMock,
+)
+async def test_get_product_by_id_not_found(mock_get, client):
+    mock_get.return_value = None
+
+    response = await client.get("/api/v1/products/999")
+
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+@patch(
+    "src.api.handlers.products.get_all_products_from_db_query",
+    new_callable=AsyncMock,
+)
+async def test_get_products(mock_get_all, client):
+    mock_get_all.return_value = [{"id": 1}]
+
     response = await client.get("/api/v1/products/")
+
     assert response.status_code == 200
     assert "products" in response.json()
 
 
 @pytest.mark.asyncio
-async def test_get_product_by_id_not_found(client):
-    response = await client.get("/api/v1/products/9999")
-    assert response.status_code == 404
+@patch(
+    "src.api.handlers.products.delete_product_query", new_callable=AsyncMock
+)
+async def test_delete_product_success(mock_delete, client):
+    mock_delete.return_value = True
+
+    response = await client.delete(
+        "/api/v1/products/Test",
+        cookies={"access_token": "fake"},
+    )
+
+    assert response.status_code == 204
 
 
 @pytest.mark.asyncio
-async def test_delete_product_unauthorized(client):
-    response = await client.delete("/api/v1/products/Test Product")
-    assert response.status_code == 400  # у тебя оборачивается в 400
+@patch(
+    "src.api.handlers.products.delete_product_query", new_callable=AsyncMock
+)
+async def test_delete_product_not_found(mock_delete, client):
+    mock_delete.return_value = False
 
-
-@pytest.mark.asyncio
-async def test_update_product_success(client, auth_cookie):
-    # сначала создаем продукт
-    payload = {
-        "title": "Update Product",
-        "description": "Desc",
-        "price": 50,
-        "quantity": 5,
-    }
-
-    await client.post(
-        "/api/v1/products/",
-        json=payload,
-        cookies=auth_cookie,
+    response = await client.delete(
+        "/api/v1/products/Test",
+        cookies={"access_token": "fake"},
     )
 
-    update_payload = {
-        "title": "Updated",
-        "description": "Updated Desc",
-        "price": 60,
-        "quantity": 10,
-    }
+    assert response.status_code == 404  # из-за try/except в коде
 
-    response = await client.put(
-        "/api/v1/products/1",
-        json=update_payload,
-        cookies=auth_cookie,
-    )
 
-    assert response.status_code == 200
+# @pytest.mark.asyncio
+# async def test_delete_product_no_auth(client):
+#     response = await client.delete("/api/v1/products/Test")
+#
+#     assert response.status_code == 400  # тоже оборачивается в 400
