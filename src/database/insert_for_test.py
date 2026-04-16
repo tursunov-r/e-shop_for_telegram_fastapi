@@ -1,14 +1,9 @@
-import random
-from random import choice
 from decimal import Decimal
 
 from src.database.queries import (
     create_products_query,
     create_user_query,
 )
-from order_service.src.database.query import create_order_query
-from order_service.src.schemas.schemas import ProductItem
-from src.schemas.schemas import CreateProductSchema
 
 products = [
     {
