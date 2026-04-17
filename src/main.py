@@ -10,9 +10,9 @@ from slowapi.errors import RateLimitExceeded
 
 from src.core.settings import settings
 from src.core.limiter import limiter
-from product_service.api.products import router_v1
-from order_service.src.api.routers.orders import router as orders_router_v1
-from user_service.src.api.user import router as user_router
+from src.api.handlers.products import router_v1
+from src.api.handlers.orders import router as orders_router_v1
+from src.api.handlers.user import router as user_router
 
 # from src.database.insert_for_test import create_data
 from src.database.queries import create_tables

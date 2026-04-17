@@ -1,5 +1,5 @@
 from src.core.db_connect import engine
-from src.database.models import (
+from src.models.base_model import (
     Base,
 )
 

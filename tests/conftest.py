@@ -1,7 +1,7 @@
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
-from src.api.main import app
+from src.main import app
 
 
 @pytest_asyncio.fixture

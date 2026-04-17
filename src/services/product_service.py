@@ -1,20 +1,17 @@
-import json
+from decimal import Decimal
 
 from fastapi import Response, HTTPException, Cookie, status
 from starlette.responses import JSONResponse
 
-from product_service.schemas.schemas import (
+from src.schemas.product_schemas import (
     CreateProductSchema,
     UpdateProductSchema,
+    SearchProductSchema,
 )
-from user_service.src.utils.auth import config
-from product_service.database.queries import (
-    create_products_query,
-    get_product_by_id_from_db_query,
-    get_all_products_from_db_query,
-    update_product_query,
-    delete_product_query,
-)
+from src.utils.auth import config
+from src.repositories.product_repository import ProductRepository
+
+product_repo = ProductRepository()
 
 
 class ProductService:
@@ -25,7 +22,7 @@ class ProductService:
     ):
         if not authorization:
             raise HTTPException(status_code=401, detail="Invalid credentials")
-        create = await create_products_query(product=product)
+        create = await product_repo.create_products_query(product=product)
 
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
@@ -51,7 +48,7 @@ class ProductService:
                 raise HTTPException(
                     status_code=401, detail="Invalid credentials"
                 )
-            update = await update_product_query(
+            update = await product_repo.update_product_query(
                 product_name=product_name, update=product
             )
             return JSONResponse(
@@ -67,19 +64,30 @@ class ProductService:
 
     @staticmethod
     async def get_product_by_id(product_id: int):
-        product = await get_product_by_id_from_db_query(product_id)
+        product = await product_repo.get_product_by_id_from_db_query(
+            product_id
+        )
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
         return product
 
     @staticmethod
     async def get_products():
-        products = await get_all_products_from_db_query()
+        products = await product_repo.get_all_products_from_db_query()
         return JSONResponse(
             content={"products": products},
             media_type="application/json",
             headers={"cache-control": "max-age=3600"},
         )
+
+    @staticmethod
+    async def search_products(
+        title: str, min_price: Decimal, max_price: Decimal
+    ):
+        result = await product_repo.search_product(
+            title=title, min_price=min_price, max_price=max_price
+        )
+        return {"products": result}
 
     @staticmethod
     async def delete_product(
@@ -88,7 +96,9 @@ class ProductService:
     ):
         if not authorization:
             raise HTTPException(status_code=401, detail="Invalid credentials")
-        result = await delete_product_query(product_name=product_title)
+        result = await product_repo.delete_product_query(
+            product_name=product_title
+        )
         if not result:
             raise HTTPException(status_code=404, detail="Product not found")
         return Response(status_code=204)

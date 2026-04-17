@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, HTTPException
 
-from order_service.src.services.order import OrderService
-from order_service.src.schemas.schemas import (
+from src.services.order_service import OrderService
+from src.schemas.order_schema import (
     CreateOrderSchema,
     UpdateOrderSchema,
 )

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Response, Request
 
 from src.core.limiter import limiter
-from user_service.src.services.user_service import User
-from user_service.src.schemas.user_schema import (
+from src.services.user_service import User
+from src.schemas.user_schemas import (
     UserCreateSchema,
     UserLoginSchema,
     UserCreateResponseSchema,

@@ -1,8 +1,11 @@
+from decimal import Decimal
+from typing import Optional
+
 from fastapi import APIRouter, status, Request
 
-from product_service.services.product_service import ProductService
+from src.services.product_service import ProductService
 
-from product_service.schemas.schemas import (
+from src.schemas.product_schemas import (
     CreateProductSchema,
     UpdateProductSchema,
 )
@@ -21,6 +24,22 @@ async def create_product(
 ):
     create = await product_service.create_product(product=product)
     return create
+
+
+@router_v1.get("/{product_title}")
+@limiter.limit("30/minute")
+async def search_product(
+    product_title: str,
+    request: Request,
+    product_min_price: Optional[Decimal] = None,
+    product_max_price: Optional[Decimal] = None,
+):
+    product_title = await product_service.search_products(
+        title=product_title,
+        min_price=product_min_price,
+        max_price=product_max_price,
+    )
+    return product_title
 
 
 @router_v1.get("/{product_id}", status_code=status.HTTP_200_OK)

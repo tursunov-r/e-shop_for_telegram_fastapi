@@ -24,6 +24,7 @@ class CreateProductSchema(BaseModel):
         ge=0,
         le=100_000,
         description="The quantity of the product.",
+        default=1,
     )
 
     @field_validator("price", mode="before")
@@ -58,3 +59,9 @@ class UpdateProductSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SearchProductSchema(BaseModel):
+    title: str
+    min_price: Decimal = Field(ge=0.00, decimal_places=2)
+    max_price: Decimal = Field(ge=0.00, le=10_000_000, decimal_places=2)
