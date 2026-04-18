@@ -36,15 +36,7 @@ class ProductRepository:
         result = await session.execute(select(ProductModel))
         products = result.scalars().all()
         if products:
-            return [
-                {
-                    "id": product.id,
-                    "title": product.title,
-                    "quantity": product.quantity,
-                    "price": float(product.price),
-                }
-                for product in products
-            ]
+            return [item for item in products]
         raise HTTPException(status_code=404, detail="No products yet")
 
     @staticmethod
@@ -66,6 +58,20 @@ class ProductRepository:
         max_price: Decimal,
         session: AsyncSession,
     ):
+        if not min_price:
+            min_price = await session.execute(
+                select(ProductModel.price)
+                .order_by(ProductModel.price)
+                .limit(1)
+            )
+            min_price = min_price.scalar_one_or_none()
+        if not max_price:
+            max_price = await session.execute(
+                select(ProductModel.price)
+                .order_by(ProductModel.price.desc())
+                .limit(1)
+            )
+            max_price = max_price.scalar_one_or_none()
         print(title, min_price, max_price)
         result = await session.execute(
             select(ProductModel)
@@ -74,7 +80,7 @@ class ProductRepository:
         )
         products = result.scalars().all()
         if products:
-            return products
+            return [item for item in products]
         raise HTTPException(status_code=404, detail="No products yet")
 
     @staticmethod
@@ -110,7 +116,8 @@ class ProductRepository:
             select(ProductModel).where(ProductModel.id == product_id)
         )
         product = product.scalar_one_or_none()
-        print(product.quantity)
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
         if product.quantity < quantity:
             raise HTTPException(status_code=404, detail="Not enough products")
         product.quantity -= quantity

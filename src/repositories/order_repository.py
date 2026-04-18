@@ -19,7 +19,6 @@ class OrderRepository:
         try:
             order = OrderModel(user_id=user_id, total=Decimal(0))
             session.add(order)
-
             total_sum = Decimal(0)
             for item in products:
                 await product_repo.update_product_quantity(
@@ -77,7 +76,7 @@ class OrderRepository:
         order_items = result.scalars().all()
         if order_items:
             return order_items
-        return None
+        raise ValueError(f"Order {order_id} not found")
 
     @staticmethod
     async def update_order_query(
@@ -98,37 +97,20 @@ class OrderRepository:
 
     @staticmethod
     async def get_user_orders_query(user_id: int, session: AsyncSession):
-        result = await session.execute(
-            select(UserModel)
-            .options(
-                joinedload(UserModel.orders).joinedload(OrderModel.products)
+        try:
+            result = await session.execute(
+                select(UserModel)
+                .options(
+                    joinedload(UserModel.orders)
+                    .joinedload(OrderModel.items)
+                    .joinedload(OrderItemModel.product)
+                )
+                .where(UserModel.id == user_id)
             )
-            .where(UserModel.id == user_id)
-        )
-        user = result.unique().scalar_one_or_none()
-
-        if not user:
-            return None
-
-        orders_data = []
-        for order in user.orders:
-            products = [
-                {
-                    "id": product.id,
-                    "title": product.title,
-                    "price": float(product.price),
-                }
-                for product in order.products
-            ]
-            orders_data.append(
-                {
-                    "order_id": order.id,
-                    "total": float(order.total),
-                    "created_at": order.created_at,
-                    "products": products,
-                }
-            )
-        return orders_data
+            orders = result.unique().scalars().all()
+            return orders
+        except Exception as e:
+            raise e
 
     @staticmethod
     async def update_order_status_query(

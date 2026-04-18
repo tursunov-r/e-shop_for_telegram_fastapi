@@ -37,10 +37,19 @@ class UserCreateSchema(BaseModel):
         return self
 
 
-class UserLoginSchema(BaseModel):
+class UserData(BaseModel):
+    id: int
+    first_name: str = Field(min_length=1, max_length=255)
+    last_name: str = Field(min_length=1, max_length=255)
     email: EmailStr
-    password: str = Field(min_length=8)
+    balance: float = Field(default=0, ge=0, le=1_000_000)
 
 
 class UserCreateResponseSchema(BaseModel):
     message: str
+    data: UserData
+
+
+class UserLoginSchema(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)

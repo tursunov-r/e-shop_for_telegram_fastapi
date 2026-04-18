@@ -13,17 +13,17 @@ order_repo = OrderRepository()
 
 class OrderService:
     @staticmethod
-    async def create_order(order: CreateOrderSchema, session: AsyncSession):
-        order_id = await order_repo.create_order_query(
-            user_id=order.user_id, products=order.product_ids, session=session
+    async def create_order(
+        new_order: CreateOrderSchema, session: AsyncSession
+    ):
+        order = await order_repo.create_order_query(
+            user_id=new_order.user_id,
+            products=new_order.product_ids,
+            session=session,
         )
-        if not order_id:
+        if not order:
             raise
-        return {
-            "message": "success",
-            "data": order_id,
-            "status": status.HTTP_201_CREATED,
-        }
+        return order
 
     @staticmethod
     async def get_order_by_id(order_id: int, session: AsyncSession):
@@ -49,4 +49,11 @@ class OrderService:
     @staticmethod
     async def get_orders(session: AsyncSession):
         orders = await order_repo.get_all_orders_query(session=session)
+        return orders
+
+    @staticmethod
+    async def get_user_orders(user_id: int, session: AsyncSession):
+        orders = await order_repo.get_user_orders_query(
+            user_id=user_id, session=session
+        )
         return orders

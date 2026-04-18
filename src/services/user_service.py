@@ -33,7 +33,4 @@ class User:
     @staticmethod
     async def get_users(session: AsyncSession):
         users = await user_repo.get_users_query(session=session)
-        if users:
-            return users
-        else:
-            return {"message": "No users found"}
+        return users

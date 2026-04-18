@@ -30,6 +30,8 @@ class UserRepository:
             balance=user.balance,
         )
         session.add(query)
+        await session.flush()
+        await session.refresh(query)
         return query
 
     @staticmethod
@@ -47,7 +49,7 @@ class UserRepository:
     @staticmethod
     async def get_users_query(session: AsyncSession):
         result = await session.execute(select(UserModel))
-        user = result.scalars().all()
-        if user:
-            return user
+        users = result.scalars().all()
+        if users:
+            return users
         raise HTTPException(status_code=404, detail="User not found")

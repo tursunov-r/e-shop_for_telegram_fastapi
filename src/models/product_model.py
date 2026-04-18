@@ -23,6 +23,4 @@ class ProductModel(Base):
         nullable=False, default=datetime.now
     )
 
-    orders = relationship(
-        "OrderModel", secondary="order_items", back_populates="products"
-    )
+    order_items = relationship("OrderItemModel", back_populates="product")

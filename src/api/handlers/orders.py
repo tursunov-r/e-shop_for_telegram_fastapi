@@ -20,7 +20,7 @@ async def create_order(
     -id пользователя
     -id товара передаются кортежем (id товара, количество)
     """
-    result = await service.create_order(order=order, session=session)
+    result = await service.create_order(new_order=order, session=session)
     return result
 
 
@@ -37,6 +37,14 @@ async def get_order(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
         )
+
+
+@router.get("/user/{user_id}", status_code=status.HTTP_200_OK)
+async def get_user_orders(
+    user_id: int, session: AsyncSession = Depends(get_session)
+):
+    orders = await service.get_user_orders(user_id=user_id, session=session)
+    return orders
 
 
 @router.patch("/{order_id}")

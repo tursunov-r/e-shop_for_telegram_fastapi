@@ -65,3 +65,11 @@ class SearchProductSchema(BaseModel):
     title: str
     min_price: Decimal = Field(ge=0.00, decimal_places=2)
     max_price: Decimal = Field(ge=0.00, le=10_000_000, decimal_places=2)
+
+
+class GetProductSchema(BaseModel):
+    id: int
+    title: str
+    price: Decimal = Field(ge=0.00, decimal_places=2)
+    quantity: int = Field(ge=0)
+    description: str | None

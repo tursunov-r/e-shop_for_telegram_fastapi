@@ -39,32 +39,14 @@ class ProductService:
         session: AsyncSession,
         authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
     ):
-        """Обновление товара в базе данных по названию товара
-        - **title**: название товара
-        - **description**: описание товара
-        - **price**: стоимость товара
-        - **quantity**: наличие на складе
-        данные не переданные в json не будут изменены
-        - **Необходима авторизация через http://0.0.0.0:8000/api/v1/users/login**
-        """
-        try:
-            if not authorization:
-                raise HTTPException(
-                    status_code=401, detail="Invalid credentials"
-                )
-            update = await product_repo.update_product_query(
-                product_name=product_name, update=product, session=session
-            )
-            return JSONResponse(
-                content=update,
-                media_type="application/json",
-                status_code=status.HTTP_200_OK,
-                headers={"content-type": "application/json"},
-            )
-        except HTTPException as e:
-            raise HTTPException(
-                status_code=400, detail=f"Something went wrong: {e}"
-            )
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        update = await product_repo.update_product_query(
+            product_name=product_name, update=product, session=session
+        )
+        if update:
+            return update
+        raise HTTPException(status_code=400, detail=f"Something went wrong")
 
     @staticmethod
     async def get_product_by_id(product_id: int, session: AsyncSession):
@@ -80,7 +62,7 @@ class ProductService:
         products = await product_repo.get_all_products_from_db_query(
             session=session
         )
-        return {"products": products}
+        return products
 
     @staticmethod
     async def search_products(
@@ -95,7 +77,7 @@ class ProductService:
             max_price=max_price,
             session=session,
         )
-        return {"products": result}
+        return result
 
     @staticmethod
     async def delete_product(

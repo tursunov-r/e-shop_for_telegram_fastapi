@@ -22,9 +22,7 @@ class OrderModel(Base):
     created_at: Mapped[datetime] = mapped_column(default=datetime.now)
 
     user = relationship("UserModel", back_populates="orders")
-    products = relationship(
-        "ProductModel", secondary="order_items", back_populates="orders"
-    )
+    items = relationship("OrderItemModel", back_populates="order")
 
 
 class OrderItemModel(Base):
@@ -37,3 +35,5 @@ class OrderItemModel(Base):
     )
     quantity: Mapped[int] = mapped_column(nullable=False, default=1)
     total: Mapped[Decimal] = mapped_column(nullable=False, default=0)
+    order = relationship("OrderModel", back_populates="items")
+    product = relationship("ProductModel", back_populates="order_items")
