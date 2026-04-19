@@ -2,7 +2,7 @@ import asyncio
 import time
 from random import choice
 
-from src.database.queries import update_order_status_query
+from order_service.src.database.query import update_order_status_query
 
 statuses = ["created", "rady to ship", "delivery", "processed"]
 
@@ -18,8 +18,8 @@ async def process_order_async(order_id: int, status: str) -> dict:
 
 async def process_orders_async(orders: list):
     tasks = [
-        process_order_async(order_id=orders, status=choice(statuses))
-        for orders in orders
+        process_order_async(order_id=order, status=choice(statuses))
+        for order in orders
     ]
     results = await asyncio.gather(*tasks)
     return results

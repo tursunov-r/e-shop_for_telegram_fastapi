@@ -4,10 +4,16 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI, Request
 from starlette.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
 
-from src.api.handlers.products import router_v1, router_v2
-from src.api.handlers.auth import router_v1 as auth_v1
-from order_service.src.api.routers.orders import router as orders_router_v1
+from src.core.settings import settings
+from src.core.limiter import limiter
+from src.api.handlers.products import router_v1
+from src.api.handlers.orders import router as orders_router_v1
+from src.api.handlers.user import router as user_router
+from src.api.handlers.exchange import router as exchange_router
 
 # from src.database.insert_for_test import create_data
 from src.database.queries import create_tables
@@ -36,9 +42,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+ALLOWED_ORIGINS = settings.cors_origins
 
-
-routers = [router_v1, router_v2, auth_v1, orders_router_v1]
+routers = [router_v1, orders_router_v1, user_router, exchange_router]
 for router in routers:
     app.include_router(router)
 

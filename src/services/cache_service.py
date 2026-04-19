@@ -1,11 +1,7 @@
 import datetime
 import json
 import redis
-from src.database.queries import (
-    get_all_products_from_db_query,
-    update_product_in_db_query,
-    get_product_by_id_from_db_query,
-)
+
 from src.session.generate_session import generate_user_session
 
 redis_client = redis.Redis(
@@ -18,9 +14,7 @@ async def get_cached_products():
     if cache:
         return json.loads(await cache)
     products = await get_all_products_from_db_query()
-    result = await redis_client.setex(
-        "products:all", 3600, json.dumps(products)
-    )
+    result = await redis_client.setex("products:all", 3, json.dumps(products))
     return result
 
 
@@ -36,7 +30,7 @@ async def get_cached_by_id(product_id):
         return json.loads(cache)
     products = await get_product_by_id_from_db_query(product_id)
     result = await redis_client.setex(
-        f"products:{product_id}", 3600, json.dumps(products)
+        f"products:{product_id}", 3, json.dumps(products)
     )
     return result
 

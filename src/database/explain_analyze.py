@@ -1,6 +1,6 @@
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from src.database.connect import engine
+from src.core.db_connect import engine
 
 
 def users_table_analyze():
