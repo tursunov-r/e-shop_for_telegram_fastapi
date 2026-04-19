@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     ]
     rate_limit_login: str = "5/minute"
 
+    exchangerate_api_com_key: str
+    exchangerates_api_io_key: str
+    openexchangerates_org_key: str
+
     @property
     def db_url(self):
         return (

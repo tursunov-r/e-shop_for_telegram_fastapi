@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from decimal import Decimal
 
 from pydantic import (
     BaseModel,
@@ -16,10 +16,10 @@ class UserCreateSchema(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     confirm_password: str = Field(min_length=8)
-    balance: float = Field(default=0, ge=0, le=1_000_000)
+    balance: Decimal = Field(default=0, ge=0, le=1_000_000)
 
-    @field_validator("password")
     @classmethod
+    @field_validator("password")
     def validate_password(cls, pwd: str):
         pattern = re.compile(
             r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};:\'",.<>?/\\|`~]).{8,}$'

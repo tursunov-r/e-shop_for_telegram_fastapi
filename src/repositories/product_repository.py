@@ -1,6 +1,4 @@
-import logging
 from decimal import Decimal
-from itertools import product
 
 from sqlalchemy import select
 from fastapi import HTTPException
@@ -19,17 +17,18 @@ class ProductRepository:
         product: CreateProductSchema,
         session: AsyncSession,
     ):
-        try:
-            product = ProductModel(
-                title=product.title.title(),
-                quantity=product.quantity,
-                price=Decimal(product.price),
-                description=product.description,
+        if len(product.title.strip()) == 0:
+            raise HTTPException(
+                status_code=400, detail="Product name cannot be empty"
             )
-            session.add(product)
-            return product
-        except:
-            raise HTTPException(status_code=400, detail="Something went wrong")
+        new_product = ProductModel(
+            title=product.title.title().strip(),
+            quantity=product.quantity,
+            price=Decimal(product.price),
+            description=product.description,
+        )
+        session.add(new_product)
+        return new_product
 
     @staticmethod
     async def get_all_products_from_db_query(session: AsyncSession):
@@ -90,7 +89,9 @@ class ProductRepository:
         session: AsyncSession,
     ):
         result = await session.execute(
-            select(ProductModel).where(ProductModel.title == product_name)
+            select(ProductModel).where(
+                ProductModel.title == product_name.title().strip()
+            )
         )
         product = result.scalar_one_or_none()
         if not product:
@@ -126,7 +127,9 @@ class ProductRepository:
     @staticmethod
     async def delete_product_query(product_name: str, session: AsyncSession):
         result = await session.execute(
-            select(ProductModel).where(ProductModel.title == product_name)
+            select(ProductModel).where(
+                ProductModel.title == product_name.title().strip()
+            )
         )
         product = result.scalar_one_or_none()
         if not product:

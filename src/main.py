@@ -13,6 +13,7 @@ from src.core.limiter import limiter
 from src.api.handlers.products import router_v1
 from src.api.handlers.orders import router as orders_router_v1
 from src.api.handlers.user import router as user_router
+from src.api.handlers.exchange import router as exchange_router
 
 # from src.database.insert_for_test import create_data
 from src.database.queries import create_tables
@@ -46,7 +47,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 ALLOWED_ORIGINS = settings.cors_origins
 
-routers = [router_v1, orders_router_v1, user_router]
+routers = [router_v1, orders_router_v1, user_router, exchange_router]
 for router in routers:
     app.include_router(router)
 
