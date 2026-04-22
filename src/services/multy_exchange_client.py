@@ -27,6 +27,8 @@ class MultyExchangeClient:
     def get_exchange_rate(
         self, base_currency: str, target_currency: str
     ) -> Optional[float]:
+        base_currency = base_currency.upper()
+        target_currency = target_currency.upper()
         for url in self.urls:
             for attempt in range(self.max_retries):
                 try:
