@@ -44,6 +44,9 @@ async def get_user_orders(
     user_id: int, session: AsyncSession = Depends(get_session)
 ):
     orders = await service.get_user_orders(user_id=user_id, session=session)
+    test = orders
+    for order in orders:
+        print({"email": order.email})
     return orders
 
 

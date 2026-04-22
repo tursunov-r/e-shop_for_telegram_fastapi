@@ -2,15 +2,22 @@ import asyncio
 import time
 from random import choice
 
-from order_service.src.database.query import update_order_status_query
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.repositories.order_repository import OrderRepository
 
 statuses = ["created", "rady to ship", "delivery", "processed"]
 
 
-async def process_order_async(order_id: int, status: str) -> dict:
+async def process_order_async(
+    order_id: int, status: str, session: AsyncSession
+) -> dict:
     try:
+        order_repo = OrderRepository()
         await asyncio.sleep(0.1)  # имитация запроса
-        await update_order_status_query(order_id, status)
+        await order_repo.update_order_status_query(
+            session=session, order_id=order_id, status=status
+        )
         return {"message": f"Order {order_id} status is {status}."}
     except Exception as e:
         return {"message": f"Something went wrong. {str(e)}"}
