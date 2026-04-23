@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from fastapi import APIRouter, status, Request, Response
 from fastapi.params import Depends
