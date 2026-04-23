@@ -1,8 +1,12 @@
 import time
 import logging
 from contextlib import asynccontextmanager
+
+import asyncpg
+import httpx
 import uvicorn
 from fastapi import FastAPI, Request
+from httpx import AsyncClient
 from starlette.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.middleware import SlowAPIMiddleware
@@ -17,6 +21,7 @@ from src.api.handlers.exchange import router as exchange_router
 
 # from src.database.insert_for_test import create_data
 from src.database.queries import create_tables
+from src.core.db_connect import db_pool, http_client, get_pool
 
 # Анализ требований проекта SFMShop:
 # - Нужен REST API для мобильного приложения, телеграм бота
@@ -36,9 +41,12 @@ from src.database.queries import create_tables
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await get_pool()
     await create_tables()
     # await create_data()
     yield
+    await http_client.aclose()
+    await db_pool.close()
 
 
 app = FastAPI(lifespan=lifespan)
