@@ -47,7 +47,11 @@ class OrderRepository:
                 session.add(order_item)
 
             order.total = total_sum
-            return order
+            stmt = await session.execute(
+                select(UserModel.email).where(UserModel.id == user_id)
+            )
+            result = stmt.scalar_one_or_none()
+            return order, result
         except Exception as e:
             await session.rollback()
             raise e
