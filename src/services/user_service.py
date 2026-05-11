@@ -34,3 +34,12 @@ class User:
     async def get_users(session: AsyncSession):
         users = await user_repo.get_users_query(session=session)
         return users
+
+    @staticmethod
+    async def delete_user(user: UserLoginSchema, session: AsyncSession):
+        delete_user = await user_repo.delete_user_query(
+            user=user, session=session
+        )
+        if not delete_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return Response(status_code=204)

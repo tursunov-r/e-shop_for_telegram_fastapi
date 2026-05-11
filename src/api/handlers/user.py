@@ -13,11 +13,11 @@ from src.schemas.user_schemas import (
     UserData,
 )
 
-router = APIRouter(prefix="/users/v1", tags=["user"])
+router = APIRouter(prefix="/api/v1/users", tags=["user"])
 user_service = User
 
 
-@router.post("/create", response_model=UserCreateResponseSchema)
+@router.post("/", response_model=UserCreateResponseSchema)
 @limiter.limit("5/minute")
 async def create_user(
     user: UserCreateSchema,
@@ -49,3 +49,14 @@ async def get_users(
 ):
     users = await user_service.get_users(session=session)
     return users
+
+
+@router.delete("/", response_model=UserData)
+@limiter.limit("5/minute")
+async def delete_user(
+    request: Request,
+    user: UserLoginSchema,
+    session: AsyncSession = Depends(get_session),
+):
+    result = await user_service.delete_user(user=user, session=session)
+    return result
