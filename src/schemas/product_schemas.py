@@ -33,21 +33,22 @@ class CreateProductSchema(BaseModel):
 
 
 class UpdateProductSchema(BaseModel):
-    id: int
-    title: str = Field(
-        ...,
+    title: str | None = Field(
+        default=None,
         min_length=3,
         max_length=100,
         description="The title of the product.",
     )
-    description: str | None
-    price: Decimal = Field(
+    description: str | None = None
+    price: Decimal | None = Field(
+        default=None,
         ge=0.00,
         max_digits=10_000_000,
         decimal_places=2,
         description="The price of the product.",
     )
-    quantity: int = Field(
+    quantity: int | None = Field(
+        default=None,
         ge=0,
         le=100_000,
         description="The quantity of the product.",

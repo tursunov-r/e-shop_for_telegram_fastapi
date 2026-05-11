@@ -21,6 +21,16 @@ class ProductRepository:
             raise HTTPException(
                 status_code=400, detail="Product name cannot be empty"
             )
+        name = await session.execute(
+            select(ProductModel).where(
+                ProductModel.title == product.title.title().strip()
+            )
+        )
+        result = name.scalars().first()
+        if result:
+            raise HTTPException(
+                status_code=400, detail="Product already exists"
+            )
         new_product = ProductModel(
             title=product.title.title().strip(),
             quantity=product.quantity,
@@ -132,6 +142,19 @@ class ProductRepository:
             )
         )
         product = result.scalar_one_or_none()
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        await session.delete(product)
+        return {"message": "Product deleted"}
+
+    @staticmethod
+    async def delete_product_by_id_from_db_query(
+        product_id: int, session: AsyncSession
+    ):
+        product = await session.execute(
+            select(ProductModel).where(ProductModel.id == product_id)
+        )
+        product = product.scalar_one_or_none()
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
         await session.delete(product)
