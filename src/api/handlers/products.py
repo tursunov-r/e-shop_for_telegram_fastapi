@@ -87,7 +87,9 @@ async def get_products(
     return products
 
 
-@router_v1.delete("/{product_title}", status_code=status.HTTP_204_NO_CONTENT)
+@router_v1.delete(
+    "/title/{product_title}", status_code=status.HTTP_204_NO_CONTENT
+)
 @limiter.limit("1/hour")
 async def delete_product(
     product_title: str,
@@ -99,6 +101,19 @@ async def delete_product(
         session=session,
     )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router_v1.delete("/id/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/hour")
+async def delete_product_id(
+    request: Request,
+    product_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    result = await product_service.delete_product_by_id(
+        product_id=product_id, session=session
+    )
+    return result
 
 
 @router_v1.patch(

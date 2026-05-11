@@ -93,3 +93,10 @@ class ProductService:
         if not result:
             raise HTTPException(status_code=404, detail="Product not found")
         return Response(status_code=204)
+
+    @staticmethod
+    async def delete_product_by_id(product_id: int, session: AsyncSession):
+        await product_repo.delete_product_by_id_from_db_query(
+            product_id=product_id, session=session
+        )
+        return Response(status_code=204)

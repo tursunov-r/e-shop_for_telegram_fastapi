@@ -2,6 +2,7 @@ from collections.abc import AsyncGenerator
 
 import asyncpg
 import httpx
+from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
@@ -12,8 +13,9 @@ from src.core.settings import settings
 engine = create_async_engine(
     url=settings.db_url,
     echo=False,
-    pool_size=5,
-    max_overflow=10,
+    # pool_size=5,
+    # max_overflow=10,
+    poolclass=NullPool,
 )
 
 async_session = async_sessionmaker(

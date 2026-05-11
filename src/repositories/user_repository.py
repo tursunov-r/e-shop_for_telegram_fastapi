@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.user_model import UserModel
@@ -53,3 +53,14 @@ class UserRepository:
         if users:
             return users
         raise HTTPException(status_code=404, detail="User not found")
+
+    @staticmethod
+    async def delete_user_query(user: UserLoginSchema, session: AsyncSession):
+        result = await session.execute(
+            select(UserModel).where(UserModel.email == user.email)
+        )
+        db_user = result.scalar_one_or_none()
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        await session.delete(db_user)
+        return db_user
