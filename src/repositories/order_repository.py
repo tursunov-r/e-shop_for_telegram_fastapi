@@ -33,7 +33,7 @@ class OrderRepository:
                 )
                 product = result.scalar_one_or_none()
                 if not product:
-                    raise ValueError(f"Product {item.product_id} not found")
+                    raise ValueError("Order not found")
 
                 item_total = product.price * item.quantity
                 total_sum += item_total
@@ -70,7 +70,7 @@ class OrderRepository:
         order = result.scalar_one_or_none()
         if order:
             return order
-        return None
+        raise ValueError(f"Order not found")
 
     @staticmethod
     async def get_order_items_query(order_id: int, session: AsyncSession):
@@ -80,7 +80,7 @@ class OrderRepository:
         order_items = result.scalars().all()
         if order_items:
             return order_items
-        raise ValueError(f"Order {order_id} not found")
+        return None
 
     @staticmethod
     async def update_order_query(
@@ -101,20 +101,19 @@ class OrderRepository:
 
     @staticmethod
     async def get_user_orders_query(user_id: int, session: AsyncSession):
-        try:
-            result = await session.execute(
-                select(UserModel)
-                .options(
-                    joinedload(UserModel.orders)
-                    .joinedload(OrderModel.items)
-                    .joinedload(OrderItemModel.product)
-                )
-                .where(UserModel.id == user_id)
+        result = await session.execute(
+            select(UserModel)
+            .options(
+                joinedload(UserModel.orders)
+                .joinedload(OrderModel.items)
+                .joinedload(OrderItemModel.product)
             )
-            orders = result.unique().scalars().all()
-            return orders
-        except Exception as e:
-            raise e
+            .where(UserModel.id == user_id)
+        )
+        orders = result.unique().scalars().all()
+        if not orders:
+            raise ValueError("Order not found")
+        return orders
 
     @staticmethod
     async def update_order_status_query(
@@ -125,7 +124,7 @@ class OrderRepository:
         )
         order = result.scalar_one_or_none()
         if not order:
-            raise ValueError(f"Order {order_id} not found")
+            raise ValueError("Order not found")
         if order.status == status:
             raise ValueError(f"Order {order_id} already {status}")
         order.status = status

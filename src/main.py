@@ -1,5 +1,4 @@
 import time
-import logging
 from contextlib import asynccontextmanager
 
 import asyncpg
@@ -59,8 +58,6 @@ routers = [router_v1, orders_router_v1, user_router, exchange_router]
 for router in routers:
     app.include_router(router)
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 app.add_middleware(
     CORSMiddleware,
@@ -77,16 +74,12 @@ async def log_requests(request: Request, call_next):
     start_time = time.time()
 
     # Логирование запроса
-    logger.info(f"Запрос: {request.method} {request.url.path}")
 
     # Обработка запроса
     response = await call_next(request)
 
     # Логирование ответа
     process_time = time.time() - start_time
-    logger.info(
-        f"Ответ: {response.status_code}, время: {process_time:.3f} сек"
-    )
 
     # Добавление заголовка с временем обработки
     response.headers["X-Process-Time"] = str(process_time)
@@ -95,4 +88,6 @@ async def log_requests(request: Request, call_next):
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "main:app", host="0.0.0.0", port=8000, reload=True, access_log=False
+    )

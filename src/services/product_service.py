@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from fastapi import Response, HTTPException, Cookie, status
+from fastapi import Response, Cookie, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
 
@@ -22,7 +22,7 @@ class ProductService:
         authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
     ):
         if not authorization:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            raise "Not authorized"
         create = await product_repo.create_products_query(
             product=product, session=session
         )
@@ -40,13 +40,13 @@ class ProductService:
         authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
     ):
         if not authorization:
-            raise HTTPException(status_code=401, detail="Unauthorized")
+            raise "Not authorized"
         update = await product_repo.update_product_query(
             product_name=product_name, update=product, session=session
         )
         if update:
             return update
-        raise HTTPException(status_code=400, detail=f"Something went wrong")
+        raise ValueError("Something went wrong")
 
     @staticmethod
     async def get_product_by_id(product_id: int, session: AsyncSession):
@@ -54,7 +54,7 @@ class ProductService:
             product_id=product_id, session=session
         )
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise ValueError("Product not found")
         return product
 
     @staticmethod
@@ -86,12 +86,12 @@ class ProductService:
         authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
     ):
         if not authorization:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            raise "Not authorized"
         result = await product_repo.delete_product_query(
             product_name=product_title, session=session
         )
         if not result:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise ValueError("Product not found")
         return Response(status_code=204)
 
     @staticmethod
