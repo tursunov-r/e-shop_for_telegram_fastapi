@@ -25,7 +25,7 @@ class User:
     ):
         login = await user_repo.login_user_query(user=user, session=session)
         if not login:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            raise ValueError("Invalid credentials")
         token = security.create_access_token(uid="12345")
         response.set_cookie(config.JWT_ACCESS_COOKIE_NAME, token)
         return {"access_token": token}
@@ -41,5 +41,5 @@ class User:
             user=user, session=session
         )
         if not delete_user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise ValueError("User not found")
         return Response(status_code=204)

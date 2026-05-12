@@ -8,6 +8,9 @@ from src.schemas.order_schema import (
 )
 from src.core.db_connect import get_session
 
+from src.services.log_service import log_service
+from src.utils.statuses import get_status_code
+
 router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
 service = OrderService()
 
@@ -20,8 +23,22 @@ async def create_order(
     -id пользователя
     -id товара передаются кортежем (id товара, количество)
     """
-    result = await service.create_order(new_order=order, session=session)
-    return result
+    try:
+        result = await service.create_order(new_order=order, session=session)
+        log_service.info(
+            f"order created successfully: ",
+            order_id=result[0].id,
+            email=result[1],
+        )
+        return result
+    except Exception as e:
+        log_service.error(
+            "error creating order",
+            user=order.user_id,
+            code=get_status_code(e),
+            exception=str(e),
+        )
+        raise HTTPException(status_code=get_status_code(e), detail=str(e))
 
 
 @router.get("/{order_id}", status_code=status.HTTP_200_OK)
@@ -32,22 +49,36 @@ async def get_order(
         result = await service.get_order_by_id(
             order_id=order_id, session=session
         )
+        log_service.info("order retrieved successfully: ", order_id=order_id)
         return result
-    except:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
+    except Exception as e:
+        log_service.error(
+            "error retrieving order",
+            order=order_id,
+            code=get_status_code(e),
+            exception=str(e),
         )
+        raise HTTPException(status_code=get_status_code(e), detail=str(e))
 
 
 @router.get("/user/{user_id}", status_code=status.HTTP_200_OK)
 async def get_user_orders(
     user_id: int, session: AsyncSession = Depends(get_session)
 ):
-    orders = await service.get_user_orders(user_id=user_id, session=session)
-    test = orders
-    for order in orders:
-        print({"email": order.email})
-    return orders
+    try:
+        orders = await service.get_user_orders(
+            user_id=user_id, session=session
+        )
+        log_service.info("order retrieved successfully: ", orders=user_id)
+        return orders
+    except Exception as e:
+        log_service.error(
+            "error retrieving user orders",
+            user=user_id,
+            code=get_status_code(e),
+            exception=str(e),
+        )
+        raise HTTPException(status_code=get_status_code(e), detail=str(e))
 
 
 @router.patch("/{order_id}")
@@ -56,20 +87,26 @@ async def update_order(
 ):
     try:
         result = await service.update_order(order=order, session=session)
+        log_service.info("order updated successfully: ", order=order)
         return result
-    except:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Something went wrong",
+    except Exception as e:
+        log_service.error(
+            "error updating order",
+            order=order,
+            code=get_status_code(e),
+            exception=str(e),
         )
+        raise HTTPException(status_code=get_status_code(e), detail=str(e))
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def get_orders(session: AsyncSession = Depends(get_session)):
     try:
         result = await service.get_orders(session=session)
+        log_service.info("order get successfully: ", result=result[0])
         return result
-    except:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Not orders yet"
+    except Exception as e:
+        log_service.error(
+            "error get order", code=get_status_code(e), exception=str(e)
         )
+        raise HTTPException(status_code=get_status_code(e), detail=str(e))

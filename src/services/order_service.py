@@ -1,4 +1,3 @@
-from fastapi import status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.schemas.order_schema import (
@@ -23,10 +22,7 @@ class OrderService:
             session=session,
         )
         if not order:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Order creation failed",
-            )
+            raise ValueError("Order was not created")
         producer = QueueProducer("process_order")
         producer.send_order_task(
             order_id=order[0].id,
@@ -43,7 +39,7 @@ class OrderService:
             order_id=order_id, session=session
         )
         if not order or not items:
-            raise
+            raise ValueError("Order not found")
         return {"order details": order, "order items": items}
 
     async def update_order(
@@ -53,7 +49,7 @@ class OrderService:
             order_id=order.order_id, status=order.status, session=session
         )
         if not result:
-            raise
+            raise ValueError("Something went wrong")
         return result
 
     async def get_orders(self, session: AsyncSession):

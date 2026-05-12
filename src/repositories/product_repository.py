@@ -1,7 +1,6 @@
 from decimal import Decimal
 
 from sqlalchemy import select
-from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.product_model import ProductModel
@@ -18,9 +17,7 @@ class ProductRepository:
         session: AsyncSession,
     ):
         if len(product.title.strip()) == 0:
-            raise HTTPException(
-                status_code=400, detail="Product name cannot be empty"
-            )
+            raise ValueError("Title cannot be empty")
         name = await session.execute(
             select(ProductModel).where(
                 ProductModel.title == product.title.title().strip()
@@ -28,9 +25,7 @@ class ProductRepository:
         )
         result = name.scalars().first()
         if result:
-            raise HTTPException(
-                status_code=400, detail="Product already exists"
-            )
+            raise ValueError("Product already exists")
         new_product = ProductModel(
             title=product.title.title().strip(),
             quantity=product.quantity,
@@ -46,7 +41,7 @@ class ProductRepository:
         products = result.scalars().all()
         if products:
             return [item for item in products]
-        raise HTTPException(status_code=404, detail="No products yet")
+        raise ValueError("Product not found")
 
     @staticmethod
     async def get_product_by_id_from_db_query(
@@ -58,7 +53,7 @@ class ProductRepository:
         product = result.scalar_one_or_none()
         if product:
             return product
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise ValueError("Product not found")
 
     @staticmethod
     async def search_product(
@@ -90,7 +85,7 @@ class ProductRepository:
         products = result.scalars().all()
         if products:
             return [item for item in products]
-        raise HTTPException(status_code=404, detail="No products yet")
+        raise ValueError("Product not found")
 
     @staticmethod
     async def update_product_query(
@@ -105,7 +100,7 @@ class ProductRepository:
         )
         product = result.scalar_one_or_none()
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise ValueError("Product not found")
 
         # Обновляем только непустые поля
         if update.title is not None:
@@ -128,9 +123,9 @@ class ProductRepository:
         )
         product = product.scalar_one_or_none()
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise ValueError("Product not found")
         if product.quantity < quantity:
-            raise HTTPException(status_code=404, detail="Not enough products")
+            raise ValueError("Product quantity is too small")
         product.quantity -= quantity
         return product
 
@@ -143,7 +138,7 @@ class ProductRepository:
         )
         product = result.scalar_one_or_none()
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise ValueError("Product not found")
         await session.delete(product)
         return {"message": "Product deleted"}
 
@@ -156,6 +151,6 @@ class ProductRepository:
         )
         product = product.scalar_one_or_none()
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise ValueError("Product not found")
         await session.delete(product)
         return {"message": "Product deleted"}

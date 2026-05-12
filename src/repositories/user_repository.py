@@ -1,5 +1,4 @@
-from fastapi import HTTPException
-from sqlalchemy import select, delete
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.user_model import UserModel
@@ -18,9 +17,7 @@ class UserRepository:
         )
         result = email.scalar_one_or_none()
         if result:
-            raise HTTPException(
-                status_code=400, detail="Email already registered"
-            )
+            raise ValueError("email already exists")
         hash_pwd = hash_password(user.password)
         query = UserModel(
             first_name=user.first_name,
@@ -44,7 +41,7 @@ class UserRepository:
             verified = verify_password(user.password, result.password)
             if verified:
                 return True
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise ValueError("Invalid credentials")
 
     @staticmethod
     async def get_users_query(session: AsyncSession):
@@ -52,7 +49,7 @@ class UserRepository:
         users = result.scalars().all()
         if users:
             return users
-        raise HTTPException(status_code=404, detail="User not found")
+        raise ValueError("Users not found")
 
     @staticmethod
     async def delete_user_query(user: UserLoginSchema, session: AsyncSession):
@@ -61,6 +58,6 @@ class UserRepository:
         )
         db_user = result.scalar_one_or_none()
         if not db_user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise ValueError("User not found")
         await session.delete(db_user)
         return db_user

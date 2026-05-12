@@ -1,89 +1,39 @@
-# Файл src/services/log_service.py
-from pymongo import MongoClient
-from datetime import datetime, timedelta
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# Подключение к MongoDB
-client = MongoClient(
-    host=os.getenv("MONGO_HOST", "localhost"),
-    port=int(os.getenv("MONGO_PORT", 27017)),
-)
-
-db = client["sfmshop_logs"]
-logs_collection = db["logs"]
+import logging
+import sys
 
 
-def save_log(log_data):
-    """Сохранение лога в MongoDB"""
-    # Добавление timestamp если его нет
-    if "timestamp" not in log_data:
-        log_data["timestamp"] = datetime.now()
+class LogService:
+    def __init__(self, log_file: str = "app.log"):
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+        self.logger.handlers.clear()
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(formatter)
 
-    result = logs_collection.insert_one(log_data)
-    return result.inserted_id
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(formatter)
 
+        self.logger.addHandler(file_handler)
+        self.logger.addHandler(console_handler)
 
-def get_logs_by_type(log_type):
-    """Получение логов по типу"""
-    logs = logs_collection.find({"type": log_type})
-    return list(logs)
+        self.logger.propagate = False
 
+        print("LOGGER READY")
 
-def get_error_logs():
-    """Получение всех ошибок"""
-    logs = logs_collection.find({"type": "error"})
-    return list(logs)
+    def info(self, message: str, **kwargs):
+        self.logger.info(f"{message} | {kwargs}")
 
+    def error(self, message: str, **kwargs):
+        self.logger.error(f"{message} | {kwargs}")
 
-# Использование
-# Лог ошибки
-error_log = {
-    "type": "error",
-    "message": "Ошибка подключения к БД",
-    "stack_trace": "...",
-}
-print(save_log(error_log))
+    def warning(self, message: str, **kwargs):
+        self.logger.warning(f"{message} | {kwargs}")
 
-# Лог доступа
-access_log = {
-    "type": "access",
-    "ip": "192.168.1.1",
-    "endpoint": "/api/products",
-    "method": "GET",
-    "status_code": 200,
-}
-print(save_log(access_log))
-print(get_error_logs())
-
-# Разные структуры - нет проблем!
+    def critical(self, message: str, **kwargs):
+        self.logger.critical(f"{message} | {kwargs}")
 
 
-def get_logs_by_status(status_code: int):
-    """Поиск логов по статус-коду"""
-    logs = logs_collection.find({"status_code": status_code})
-    return list(logs)
-
-
-def get_logs_by_date_range(start_date: datetime, end_date: datetime):
-    """Поиск логов по диапазону дат"""
-    logs = logs_collection.find(
-        {"timestamp": {"$gte": start_date, "$lte": end_date}}
-    )
-    return list(logs)
-
-
-def get_logs_by_ip(ip_address):
-    """Поиск логов по IP адресу"""
-    logs = logs_collection.find({"ip": ip_address})
-    return list(logs)
-
-
-yesterday = datetime.now() - timedelta(days=1)
-today = datetime.now()
-
-print(get_logs_by_ip("192.168.1.1"))
-print(get_logs_by_status(200))
-print(get_logs_by_date_range(yesterday, today))
+log_service = LogService()
