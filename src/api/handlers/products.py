@@ -1,183 +1,193 @@
-import json
 from decimal import Decimal
+from typing import Optional, List
 
-from fastapi import APIRouter, HTTPException, status, Response, Cookie
-from sqlalchemy import select
+from fastapi import APIRouter, status, Request, Response, HTTPException
+from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import JSONResponse
 
-from src.database.models import ProductModel
-from src.database.queries import (
-    create_products_query,
-    update_product_query,
-    delete_product_query,
-    get_product_by_id_from_db_query,
-    get_all_products_from_db_query,
+from src.core.db_connect import get_session
+from src.services.log_service import log_service
+from src.services.product_service import ProductService
+
+from src.schemas.product_schemas import (
+    CreateProductSchema,
+    UpdateProductSchema,
+    GetProductSchema,
 )
-from src.database.connect import engine
-from src.schemas.schemas import CreateProductSchema, UpdateProductSchema
-from src.utils.auth import config
+from src.core.limiter import limiter
+from src.utils.statuses import get_status_code
 
 router_v1 = APIRouter(prefix="/api/v1/products", tags=["products v1"])
-router_v2 = APIRouter(prefix="/api/v2/products", tags=["products v2"])
+
+product_service = ProductService()
 
 
-@router_v1.post("/", status_code=status.HTTP_201_CREATED)
+@router_v1.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+)
+@limiter.limit("30/minute")
 async def create_product(
     product: CreateProductSchema,
-    authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
+    request: Request,
+    session: AsyncSession = Depends(get_session),
 ):
-    """Создание товара
-    - **title**: название товара
-    - **description**: описание товара
-    - **price**: стоимость товара
-    - **quantity**: количество на складе
-    - **Необходима авторизация через http://0.0.0.0:8000/api/v1/users/login**
-    """
     try:
-        # if not authorization:
-        #     raise HTTPException(status_code=401, detail="Invalid credentials")
-        if product.price < 0:
-            raise HTTPException(
-                status_code=400, detail="Price cannot be negative"
-            )
-        if product.quantity < 0:
-            raise HTTPException(
-                status_code=400, detail="Quantity cannot be negative"
-            )
-        await create_products_query(
-            product=product,
+        create = await product_service.create_product(
+            product=product, session=session
         )
-        return {
-            "message": "Product created successfully",
-            "status": status.HTTP_201_CREATED,
-        }
-    except HTTPException as e:
-        raise HTTPException(
-            status_code=400, detail=f"Something went wrong: {e}"
+        log_service.info("created product", create=create)
+        return JSONResponse(
+            status_code=status.HTTP_201_CREATED, content={"message": "created"}
         )
+    except Exception as e:
+        log_service.error(
+            "error creating product", code=get_status_code(e), exception=str(e)
+        )
+        raise HTTPException(status_code=get_status_code(e), detail=str(e))
 
 
-@router_v1.get("/{id}", status_code=status.HTTP_200_OK)
-async def get_product_by_id(product_id: int):
+@router_v1.get("/title/{product_title}", response_model=List[GetProductSchema])
+@limiter.limit("30/minute")
+async def search_product(
+    product_title: str,
+    request: Request,
+    product_min_price: Optional[Decimal] = None,
+    product_max_price: Optional[Decimal] = None,
+    session: AsyncSession = Depends(get_session),
+):
     try:
-        product = await get_product_by_id_from_db_query(product_id)
-        if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+        product = await product_service.search_products(
+            title=product_title,
+            min_price=product_min_price,
+            max_price=product_max_price,
+            session=session,
+        )
+        log_service.info("searching product", product=product)
         return product
-    except HTTPException:
-        raise
+    except Exception as e:
+        log_service.error(
+            "error searching product", code=get_status_code(e), error=str(e)
+        )
+        raise HTTPException(status_code=get_status_code(e), detail=str(e))
 
 
-@router_v1.get("/", status_code=status.HTTP_200_OK)
-async def get_products():
-    products = await get_all_products_from_db_query()
-    return Response(
-        content=json.dumps({"products": products}),
-        media_type="application/json",
-        headers={"cache-control": "max-age=3600"},
-    )
+@router_v1.get(
+    "/id/{product_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=GetProductSchema,
+)
+@limiter.limit("30/minute")
+async def get_product_by_id(
+    product_id: int,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        product = await product_service.get_product_by_id(
+            product_id=product_id, session=session
+        )
+        log_service.info("getting product", product=product)
+        return product
+    except Exception as e:
+        log_service.error(
+            "product not found",
+            product_id=product_id,
+            code=get_status_code(e),
+            error=str(e),
+        )
+        raise HTTPException(status_code=get_status_code(e), detail=str(e))
+
+
+@router_v1.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model=List[GetProductSchema],
+)
+@limiter.limit("30/minute")
+async def get_products(
+    request: Request, session: AsyncSession = Depends(get_session)
+):
+    try:
+        products = await product_service.get_products(session=session)
+        log_service.info("getting products", products=products)
+        return products
+    except Exception as e:
+        log_service.error(
+            "error getting products", code=get_status_code(e), error=str(e)
+        )
+        raise HTTPException(status_code=get_status_code(e), detail=str(e))
 
 
 @router_v1.delete(
-    "/{product_title}",
-    status_code=status.HTTP_204_NO_CONTENT | status.HTTP_404_NOT_FOUND,
+    "/title/{product_title}", status_code=status.HTTP_204_NO_CONTENT
 )
+@limiter.limit("1/hour")
 async def delete_product(
     product_title: str,
-    authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
+    request: Request,
+    session: AsyncSession = Depends(get_session),
 ):
     try:
-        if not authorization:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-        result = await delete_product_query(product_name=product_title)
-        if not result:
-            raise HTTPException(status_code=404, detail="Product not found")
-        return status.HTTP_204_NO_CONTENT
-    except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Something went wrong: {e}",
+        await product_service.delete_product(
+            product_title=product_title,
+            session=session,
         )
+        log_service.info("deleted product", product=product_title)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        log_service.error(
+            "error deleting product", code=get_status_code(e), error=str(e)
+        )
+        raise HTTPException(status_code=get_status_code(e), detail=str(e))
 
 
-@router_v1.put("/{product_id}", status_code=status.HTTP_200_OK)
-async def update_product(
+@router_v1.delete("/id/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/hour")
+async def delete_product_id(
+    request: Request,
     product_id: int,
-    update: UpdateProductSchema,
-    authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
+    session: AsyncSession = Depends(get_session),
 ):
-    """Обновление товара
-    - **title**: Название товара
-    - **description**: Описание товара
-    - **price**: Стоимость товара
-    - **quantity**: Наличие на складе
-    - Необходимо передать весь json
-    - **Необходима авторизация через http://0.0.0.0:8000/api/v1/users/login**
-    """
-    async with AsyncSession(engine) as conn:
-        try:
-            if not authorization:
-                raise HTTPException(
-                    status_code=401, detail="Invalid credentials"
-                )
-            result = await conn.execute(
-                select(ProductModel).where(ProductModel.id == product_id)
-            )
-            product = result.scalars().first()
-            if not product:
-                raise HTTPException(
-                    status_code=404, detail=f"Product {product_id} not found"
-                )
-            if (
-                not update.title
-                or not update.description
-                or not update.price
-                or not update.quantity
-            ):
-                raise HTTPException(
-                    status_code=400, detail="Missing parameters"
-                )
-
-            product.title = update.title
-            product.quantity = update.quantity
-            product.price = Decimal(update.price)
-            product.description = update.description
-
-            await conn.commit()
-            await conn.refresh(product)
-        except HTTPException as e:
-            raise e
+    try:
+        result = await product_service.delete_product_by_id(
+            product_id=product_id, session=session
+        )
+        log_service.info("deleted product", product=product_id)
+        return result
+    except Exception as e:
+        log_service.error(
+            "error deleting product",
+            product=product_id,
+            code=get_status_code(e),
+            error=str(e),
+        )
+        raise HTTPException(status_code=get_status_code(e), detail=str(e))
 
 
-@router_v2.patch("/{product_title}", status_code=status.HTTP_200_OK)
+@router_v1.patch(
+    "/{product_name}",
+    status_code=status.HTTP_200_OK,
+    response_model=GetProductSchema,
+)
+@limiter.limit("30/minute")
 async def update_product(
     product_name: str,
     product: UpdateProductSchema,
-    authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
+    request: Request,
+    session: AsyncSession = Depends(get_session),
 ):
-    """Обновление товара в базе данных по названию товара
-    - **title**: название товара
-    - **description**: описание товара
-    - **price**: стоимость товара
-    - **quantity**: наличие на складе
-    данные не переданные в json не будут изменены
-    - **Необходима авторизация через http://0.0.0.0:8000/api/v1/users/login**
-    """
     try:
-        if not authorization:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-        await update_product_query(product_name=product_name, update=product)
-        return {
-            "message": f"Product updated {product_name} successfully",
-            "status_code": status.HTTP_200_OK,
-            "metadata": {
-                "product_name": product_name,
-                "product_description": product.description,
-                "product_price": product.price,
-                "product_quantity": product.quantity,
-            },
-        }
-    except HTTPException as e:
-        raise HTTPException(
-            status_code=400, detail=f"Something went wrong: {e}"
+        update = await product_service.update_product(
+            product_name=product_name,
+            product=product,
+            session=session,
         )
+        log_service.success("updated product", update=update)
+        return update
+    except Exception as e:
+        log_service.error(
+            "error updating product", code=get_status_code(e), error=str(e)
+        )
+        raise HTTPException(status_code=get_status_code(e), detail=str(e))
