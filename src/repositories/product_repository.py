@@ -154,3 +154,6 @@ class ProductRepository:
             raise ValueError("Product not found")
         await session.delete(product)
         return {"message": "Product deleted"}
+
+
+product_repository = ProductRepository()

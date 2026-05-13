@@ -9,9 +9,7 @@ from src.schemas.product_schemas import (
     UpdateProductSchema,
 )
 from src.utils.auth import config
-from src.repositories.product_repository import ProductRepository
-
-product_repo = ProductRepository()
+from src.repositories.product_repository import product_repository
 
 
 class ProductService:
@@ -23,7 +21,7 @@ class ProductService:
     ):
         if not authorization:
             raise "Not authorized"
-        create = await product_repo.create_products_query(
+        await product_repository.create_products_query(
             product=product, session=session
         )
 
@@ -41,7 +39,7 @@ class ProductService:
     ):
         if not authorization:
             raise "Not authorized"
-        update = await product_repo.update_product_query(
+        update = await product_repository.update_product_query(
             product_name=product_name, update=product, session=session
         )
         if update:
@@ -50,7 +48,7 @@ class ProductService:
 
     @staticmethod
     async def get_product_by_id(product_id: int, session: AsyncSession):
-        product = await product_repo.get_product_by_id_from_db_query(
+        product = await product_repository.get_product_by_id_from_db_query(
             product_id=product_id, session=session
         )
         if not product:
@@ -59,7 +57,7 @@ class ProductService:
 
     @staticmethod
     async def get_products(session: AsyncSession):
-        products = await product_repo.get_all_products_from_db_query(
+        products = await product_repository.get_all_products_from_db_query(
             session=session
         )
         return products
@@ -71,7 +69,7 @@ class ProductService:
         max_price: Decimal,
         session: AsyncSession,
     ):
-        result = await product_repo.search_product(
+        result = await product_repository.search_product(
             title=title,
             min_price=min_price,
             max_price=max_price,
@@ -87,7 +85,7 @@ class ProductService:
     ):
         if not authorization:
             raise "Not authorized"
-        result = await product_repo.delete_product_query(
+        result = await product_repository.delete_product_query(
             product_name=product_title, session=session
         )
         if not result:
@@ -96,7 +94,7 @@ class ProductService:
 
     @staticmethod
     async def delete_product_by_id(product_id: int, session: AsyncSession):
-        await product_repo.delete_product_by_id_from_db_query(
+        await product_repository.delete_product_by_id_from_db_query(
             product_id=product_id, session=session
         )
         return Response(status_code=204)

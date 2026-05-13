@@ -1,11 +1,8 @@
 import time
 from contextlib import asynccontextmanager
 
-import asyncpg
-import httpx
 import uvicorn
 from fastapi import FastAPI, Request
-from httpx import AsyncClient
 from starlette.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.middleware import SlowAPIMiddleware

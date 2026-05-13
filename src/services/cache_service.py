@@ -3,6 +3,7 @@ import json
 import redis
 
 from src.session.generate_session import generate_user_session
+from src.repositories.product_repository import product_repository
 
 redis_client = redis.Redis(
     host="localhost", port=6379, db=0, decode_responses=True
@@ -13,13 +14,13 @@ async def get_cached_products():
     cache = redis_client.get("products:all")
     if cache:
         return json.loads(await cache)
-    products = await get_all_products_from_db_query()
+    products = await product_repository.get_all_products_from_db_query()
     result = await redis_client.setex("products:all", 3, json.dumps(products))
     return result
 
 
 async def update_product(product_id, data):
-    await update_product_in_db_query(product_id, data)
+    await product_repository.update_product_in_db_query(product_id, data)
     await redis_client.delete(f"products:{product_id}")
     await redis_client.delete("products:all")
 
@@ -28,7 +29,9 @@ async def get_cached_by_id(product_id):
     cache = await redis_client.get(f"products:{product_id}")
     if cache:
         return json.loads(cache)
-    products = await get_product_by_id_from_db_query(product_id)
+    products = await product_repository.get_product_by_id_from_db_query(
+        product_id
+    )
     result = await redis_client.setex(
         f"products:{product_id}", 3, json.dumps(products)
     )

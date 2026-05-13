@@ -67,7 +67,7 @@ class MultyExchangeClient:
                         print(f"Timeout, trying again in {delay} seconds")
                         time.sleep(delay)
                     else:
-                        print(f"Timeout error")
+                        print("Timeout error")
                 except ConnectionError:
                     if attempt < self.max_retries - 1:
                         delay = attempt**2
@@ -76,7 +76,7 @@ class MultyExchangeClient:
                         )
                         time.sleep(delay)
                     else:
-                        print(f"Connection error")
+                        print("Connection error")
                 except RequestException as e:
                     print(f"Request error: {e}")
         return None

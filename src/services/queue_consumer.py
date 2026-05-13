@@ -32,19 +32,11 @@ class QueueConsumer:
             print(f"RebitMQ connection error: {e}")
             return False
 
-    def process_message(
-        self, ch, method, properties, body, session: AsyncSession
-    ):
+    def process_message(self, ch, method, body, session: AsyncSession):
         try:
             message = json.loads(body)
             task = message.get("task")
             order_id = message.get("order_id")
-
-            retry_count = (
-                properties.headers.get("x-retry-count", 0)
-                if properties.headers
-                else 0
-            )
 
             # Обработка задачи
             if task == "send_email":

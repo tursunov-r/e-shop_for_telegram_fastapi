@@ -61,3 +61,6 @@ class UserRepository:
             raise ValueError("User not found")
         await session.delete(db_user)
         return db_user
+
+
+user_repository = UserRepository()

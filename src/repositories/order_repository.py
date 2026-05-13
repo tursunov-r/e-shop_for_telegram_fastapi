@@ -70,7 +70,7 @@ class OrderRepository:
         order = result.scalar_one_or_none()
         if order:
             return order
-        raise ValueError(f"Order not found")
+        raise ValueError("Order not found")
 
     @staticmethod
     async def get_order_items_query(order_id: int, session: AsyncSession):
@@ -129,3 +129,6 @@ class OrderRepository:
             raise ValueError(f"Order {order_id} already {status}")
         order.status = status
         session.add(order)
+
+
+order_repository = OrderRepository()

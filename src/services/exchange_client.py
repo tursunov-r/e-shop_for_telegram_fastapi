@@ -43,7 +43,7 @@ class ExchangeClient:
                 else:
                     print("Timed out...")
                     return None
-            except ConnectionError as e:
+            except ConnectionError:
                 if attempt < self.max_retries - 1:
                     delay = attempt**2
                     print(

@@ -26,7 +26,7 @@ async def create_order(
     try:
         result = await service.create_order(new_order=order, session=session)
         log_service.info(
-            f"order created successfully: ",
+            "order created successfully: ",
             order_id=result[0].id,
             email=result[1],
         )

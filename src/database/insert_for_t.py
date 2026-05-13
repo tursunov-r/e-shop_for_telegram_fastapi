@@ -1,9 +1,5 @@
 from decimal import Decimal
 
-from src.database.queries import (
-    create_products_query,
-    create_user_query,
-)
 
 products = [
     {
