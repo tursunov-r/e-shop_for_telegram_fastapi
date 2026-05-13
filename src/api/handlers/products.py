@@ -38,7 +38,7 @@ async def create_product(
             product=product, session=session
         )
         log_service.info("created product", create=create)
-        return Response(
+        return JSONResponse(
             status_code=status.HTTP_201_CREATED, content={"message": "created"}
         )
     except Exception as e:
@@ -64,7 +64,7 @@ async def search_product(
             max_price=product_max_price,
             session=session,
         )
-        log_service.success("searching product", product=product)
+        log_service.info("searching product", product=product)
         return product
     except Exception as e:
         log_service.error(
@@ -88,7 +88,7 @@ async def get_product_by_id(
         product = await product_service.get_product_by_id(
             product_id=product_id, session=session
         )
-        log_service.success("getting product", product=product)
+        log_service.info("getting product", product=product)
         return product
     except Exception as e:
         log_service.error(
@@ -134,6 +134,7 @@ async def delete_product(
             product_title=product_title,
             session=session,
         )
+        log_service.info("deleted product", product=product_title)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         log_service.error(
@@ -153,6 +154,7 @@ async def delete_product_id(
         result = await product_service.delete_product_by_id(
             product_id=product_id, session=session
         )
+        log_service.info("deleted product", product=product_id)
         return result
     except Exception as e:
         log_service.error(
