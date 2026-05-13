@@ -8,7 +8,7 @@ from src.models.order_model import OrderModel, OrderItemModel
 from src.schemas.order_schema import ProductItem
 from src.models.product_model import ProductModel
 from src.models.user_model import UserModel
-from src.services.product_service import product_repo
+from src.services.product_service import product_repository
 
 
 class OrderRepository:
@@ -21,7 +21,7 @@ class OrderRepository:
             session.add(order)
             total_sum = Decimal(0)
             for item in products:
-                await product_repo.update_product_quantity(
+                await product_repository.update_product_quantity(
                     product_id=item.product_id,
                     quantity=item.quantity,
                     session=session,
@@ -86,7 +86,7 @@ class OrderRepository:
     async def update_order_query(
         session: AsyncSession,
         order_id: int,
-        status: str = None,
+        status: str | None = None,
     ):
         result = await session.execute(
             select(OrderModel).where(OrderModel.id == order_id)

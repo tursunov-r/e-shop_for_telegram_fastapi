@@ -6,8 +6,10 @@ class QueueProducer:
     def __init__(self, queue_name: str, host: str = "localhost"):
         self.queue_name = queue_name
         self.host = host
-        self.connection = None
-        self.channel = None
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host=self.host)
+        )
+        self.channel = self.connection
 
     def connect(self) -> bool:
         try:

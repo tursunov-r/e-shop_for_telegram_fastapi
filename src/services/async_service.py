@@ -2,21 +2,20 @@ import asyncio
 import time
 from random import choice
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
 
+from src.core.db_connect import get_session
 from src.repositories.order_repository import OrderRepository
 
 statuses = ["created", "rady to ship", "delivery", "processed"]
 
 
-async def process_order_async(
-    order_id: int, status: str, session: AsyncSession
-) -> dict:
+async def process_order_async(order_id: int, status: str) -> dict:
     try:
         order_repo = OrderRepository()
         await asyncio.sleep(0.1)  # имитация запроса
         await order_repo.update_order_status_query(
-            session=session, order_id=order_id, status=status
+            order_id=order_id, status=status, session=Depends(get_session)
         )
         return {"message": f"Order {order_id} status is {status}."}
     except Exception as e:
@@ -30,17 +29,3 @@ async def process_orders_async(orders: list):
     ]
     results = await asyncio.gather(*tasks)
     return results
-
-
-async def main():
-    orders_list: list = list(range(1, 101))
-    start_time = time.time()
-    result = await process_orders_async(orders=orders_list)
-    end_time = time.time()
-    print("Async process time:", end_time - start_time)
-    print("Result:", result)
-    return result
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

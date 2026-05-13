@@ -63,19 +63,19 @@ class ProductRepository:
         session: AsyncSession,
     ):
         if not min_price:
-            min_price = await session.execute(
+            price_min = await session.execute(
                 select(ProductModel.price)
                 .order_by(ProductModel.price)
                 .limit(1)
             )
-            min_price = min_price.scalar_one_or_none()
+            min_price = price_min.scalar_one_or_none()
         if not max_price:
-            max_price = await session.execute(
+            price_max = await session.execute(
                 select(ProductModel.price)
                 .order_by(ProductModel.price.desc())
                 .limit(1)
             )
-            max_price = max_price.scalar_one_or_none()
+            max_price = price_max.scalar_one_or_none()
         print(title, min_price, max_price)
         result = await session.execute(
             select(ProductModel)

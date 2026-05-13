@@ -20,11 +20,11 @@ class PushNotificationService(ABC):
 
 
 class NotificationService(EmailService, SMSService, PushNotificationService):
-    def send_email(self, user_email: str, message: str):
+    def send_email(self, user_email: str, message: dict):
         return f"Hello {user_email}!\n\n{message}"
 
-    def send_sms(self, phone_number: str, message: str):
+    def send_sms(self, phone_number: str, message: dict):
         return f"Hello {phone_number}!\n\n{message}"
 
-    def send_push_notification(self, user_id: str, message: str):
+    def send_push_notification(self, user_id: str, message: dict):
         return f"Hello {user_id}!\n\n{message}"

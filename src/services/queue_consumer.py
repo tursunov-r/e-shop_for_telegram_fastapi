@@ -32,7 +32,7 @@ class QueueConsumer:
             print(f"RebitMQ connection error: {e}")
             return False
 
-    def process_message(self, ch, method, body, session: AsyncSession):
+    async def process_message(self, ch, method, body, session: AsyncSession):
         try:
             message = json.loads(body)
             task = message.get("task")
@@ -43,13 +43,14 @@ class QueueConsumer:
                 user_email = message.get("user_email")
                 notification = NotificationService()
                 notification.send_email(
-                    user_email, f"Order {order_id} created"
+                    user_email=user_email,
+                    message={"message": f"Order {order_id} created"},
                 )
                 print(notification)
 
             elif task == "update_stock":
                 items = message.get("items", [])
-                ProductRepository.update_product_quantity(
+                await ProductRepository.update_product_quantity(
                     product_id=items[0], quantity=items[1], session=session
                 )
 

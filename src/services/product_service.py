@@ -10,6 +10,7 @@ from src.schemas.product_schemas import (
 )
 from src.utils.auth import config
 from src.repositories.product_repository import product_repository
+from src.utils.exceptions.exceptions import NotAuthorized
 
 
 class ProductService:
@@ -20,7 +21,7 @@ class ProductService:
         authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
     ):
         if not authorization:
-            raise "Not authorized"
+            raise NotAuthorized("Not authorized")
         await product_repository.create_products_query(
             product=product, session=session
         )
@@ -38,7 +39,7 @@ class ProductService:
         authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
     ):
         if not authorization:
-            raise "Not authorized"
+            raise NotAuthorized("Not authorized")
         update = await product_repository.update_product_query(
             product_name=product_name, update=product, session=session
         )
@@ -84,7 +85,7 @@ class ProductService:
         authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
     ):
         if not authorization:
-            raise "Not authorized"
+            raise NotAuthorized("Not authorized")
         result = await product_repository.delete_product_query(
             product_name=product_title, session=session
         )
