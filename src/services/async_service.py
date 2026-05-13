@@ -28,4 +28,4 @@ async def process_orders_async(orders: list):
         for order in orders
     ]
     results = await asyncio.gather(*tasks)
-    return results
+    return result
