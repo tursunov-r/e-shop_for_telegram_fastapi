@@ -131,28 +131,28 @@ class ProductRepository:
 
     @staticmethod
     async def delete_product_query(product_name: str, session: AsyncSession):
-        result = await session.execute(
-            select(ProductModel).where(
-                ProductModel.title == product_name.title().strip()
-            )
-        )
-        product = result.scalar_one_or_none()
-        if not product:
-            raise ValueError("Product not found")
-        await session.delete(product)
+        # result = await session.execute(
+        #     select(ProductModel).where(
+        #         ProductModel.title == product_name.title().strip()
+        #     )
+        # )
+        # product = result.scalar_one_or_none()
+        # if not product:
+        #     raise ValueError("Product not found")
+        await session.delete(product_name)
         return {"message": "Product deleted"}
 
     @staticmethod
     async def delete_product_by_id_from_db_query(
         product_id: int, session: AsyncSession
     ):
-        product = await session.execute(
-            select(ProductModel).where(ProductModel.id == product_id)
-        )
-        product = product.scalar_one_or_none()
-        if not product:
-            raise ValueError("Product not found")
-        await session.delete(product)
+        # product = await session.execute(
+        #     select(ProductModel).where(ProductModel.id == product_id)
+        # )
+        # product = product.scalar_one_or_none()
+        # if not product:
+        #     raise ValueError("Product not found")
+        await session.delete(product_id)
         return {"message": "Product deleted"}
 
 

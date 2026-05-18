@@ -7,3 +7,10 @@ from src.utils.calculate_delivery import calculate_delivery
 )
 def test_calculate_delivery(weight, distance, expected):
     assert calculate_delivery(weight, distance) == expected
+
+
+@pytest.mark.parametrize(
+    "subtotal,total", [(10000, 8500), (7500, 6750), (5000, 4750)]
+)
+def test_calculate_totals(subtotal, total):
+    assert calculate_total_price(subtotal) == total
