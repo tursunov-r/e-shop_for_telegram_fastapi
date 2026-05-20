@@ -1,6 +1,7 @@
 from decimal import Decimal
 from typing import Optional, List
 
+from authx import AuthX
 from fastapi import APIRouter, status, Request, Response, HTTPException
 from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +17,7 @@ from src.schemas.product_schemas import (
     GetProductSchema,
 )
 from src.core.limiter import limiter
+from src.utils.auth import security
 
 router_v1 = APIRouter(prefix="/api/v1/products", tags=["products v1"])
 
@@ -31,6 +33,7 @@ async def create_product(
     product: CreateProductSchema,
     request: Request,
     session: AsyncSession = Depends(get_session),
+    token: AuthX = Depends(security.access_token_required),
 ):
     try:
         create = await product_service.create_product(

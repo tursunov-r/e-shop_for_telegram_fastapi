@@ -18,8 +18,42 @@ class UserModel(Base):
     email: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
     password: Mapped[str] = mapped_column(nullable=False)
     balance: Mapped[Decimal] = mapped_column(nullable=False, default=0)
+    telegram_id: Mapped[int] = mapped_column(
+        primary_key=True,
+        index=True,
+        nullable=True,
+        unique=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, default=datetime.now
     )
 
     orders = relationship("OrderModel", back_populates="user")
+    address = relationship("AddressModel", back_populates="address")
+    role = relationship("RoleModel", back_populates="role")
+
+
+class AddressModel(Base):
+    __tablename__ = "addresses"
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(nullable=False)
+    first_name: Mapped[str] = mapped_column(
+        nullable=False, default=UserModel.first_name
+    )
+    last_name: Mapped[str] = mapped_column(
+        nullable=False, default=UserModel.last_name
+    )
+    phone: Mapped[str] = mapped_column(nullable=False)
+    country: Mapped[str] = mapped_column(nullable=False)
+    city: Mapped[str] = mapped_column(nullable=False)
+    address: Mapped[str] = mapped_column(nullable=False)
+
+    user = relationship("UserModel", back_populates="addresses")
+
+
+class RoleModel(Base):
+    __tablename__ = "roles"
+    user_id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    role: Mapped[str] = mapped_column(nullable=False, default="user")
+
+    user = relationship("UserModel", back_populates="user")

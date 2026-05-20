@@ -7,6 +7,7 @@ from src.schemas.user_schemas import (
     UserLoginSchema,
 )
 from src.repositories.user_repository import user_repository
+from src.utils.exceptions.exceptions import InvalidCredentials
 
 
 class User:
@@ -25,7 +26,7 @@ class User:
             user=user, session=session
         )
         if not login:
-            raise ValueError("Invalid credentials")
+            raise InvalidCredentials("Invalid credentials")
         token = security.create_access_token(uid="12345")
         response.set_cookie(config.JWT_ACCESS_COOKIE_NAME, token)
         return {"access_token": token}

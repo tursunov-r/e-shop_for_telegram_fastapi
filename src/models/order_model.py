@@ -17,12 +17,18 @@ class OrderModel(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"), nullable=False, index=True
     )
-    status: Mapped[str] = mapped_column(nullable=False, default="created")
+    address_id: Mapped[int] = mapped_column(nullable=False, server_default="0")
+    promocode_id: Mapped[int] = mapped_column(nullable=True)
+    status_id: Mapped[int] = mapped_column(
+        nullable=False, default=0, server_default="0"
+    )
     total: Mapped[Decimal] = mapped_column(nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(default=datetime.now)
 
     user = relationship("UserModel", back_populates="orders")
-    items = relationship("OrderItemModel", back_populates="order")
+    items = relationship("OrderItemModel", back_populates="orders")
+    status = relationship("StatusHistoryModel", back_populates="orders")
+    promocode = relationship("PromocodeModel", back_populates="orders")
 
 
 class OrderItemModel(Base):
@@ -37,3 +43,19 @@ class OrderItemModel(Base):
     total: Mapped[Decimal] = mapped_column(nullable=False, default=0)
     order = relationship("OrderModel", back_populates="items")
     product = relationship("ProductModel", back_populates="order_items")
+
+
+class StatusHistoryModel(Base):
+    __tablename__ = "statuses_history"
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    order_id: Mapped[int] = mapped_column()
+    status: Mapped[str] = mapped_column(nullable=False, default="created")
+    at: Mapped[datetime] = mapped_column(default=datetime.now)
+    order = relationship("OrderModel", back_populates="statuses_history")
+
+
+class PromocodeModel(Base):
+    __tablename__ = "promocodes"
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    promocode: Mapped[str] = mapped_column(nullable=True)
+    orders = relationship("OrderModel", back_populates="promocode")
