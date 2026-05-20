@@ -2,25 +2,24 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field, field_validator
 
+from src.utils.barcode_generate import generate_barcode
+
 
 class CreateProductSchema(BaseModel):
-    title: str = Field(
-        min_length=3,
-        max_length=100,
-        description="The title of the product.",
-    )
-    description: str = Field(
-        min_length=0,
-        max_length=100,
-        description="The description of the product.",
-    )
+    barcode: str = Field(default=generate_barcode(), description="Barcode")
     price: Decimal = Field(
         ge=0.00,
         max_digits=10_000_000,
         decimal_places=2,
         description="The price of the product.",
     )
-    quantity: int = Field(
+    purchase_price: Decimal = Field(
+        ge=0.0,
+        max_digits=10_000_000,
+        decimal_places=2,
+        description="The purchase price of the product.",
+    )
+    stock: int = Field(
         ge=0,
         le=100_000,
         description="The quantity of the product.",

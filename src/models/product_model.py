@@ -21,7 +21,6 @@ class ProductModel(Base):
     purchase_price: Mapped[Decimal] = mapped_column(
         nullable=False, default=0, server_default="0"
     )
-    description: Mapped[str] = mapped_column(nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, default=datetime.now
     )
