@@ -1,8 +1,6 @@
-from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.db_connect import get_session
 from src.core.settings import settings
 from src.models.user_model import UserModel, RoleModel
 from src.schemas.user_schemas import (
@@ -10,6 +8,11 @@ from src.schemas.user_schemas import (
     UserLoginSchema,
 )
 from src.utils.auth import hash_password, verify_password
+from src.utils.exceptions.exceptions import (
+    EmailAlreadyExists,
+    InvalidCredentials,
+    UserNotFound,
+)
 
 
 class UserRepository:
@@ -20,7 +23,7 @@ class UserRepository:
         )
         result = email.scalar_one_or_none()
         if result:
-            raise ValueError("email already exists")
+            raise EmailAlreadyExists("email already exists")
         hash_pwd = hash_password(user.password)
         query = UserModel(
             first_name=user.first_name,
@@ -44,7 +47,7 @@ class UserRepository:
             verified = verify_password(user.password, result.password)
             if verified:
                 return result
-        raise ValueError("Invalid credentials")
+        raise InvalidCredentials()
 
     @staticmethod
     async def get_users_query(session: AsyncSession):
@@ -61,7 +64,7 @@ class UserRepository:
         )
         db_user = result.scalar_one_or_none()
         if not db_user:
-            raise ValueError("User not found")
+            raise UserNotFound("User not found")
         await session.delete(db_user)
         return db_user
 
