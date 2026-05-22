@@ -2,7 +2,7 @@ from typing import List
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from src.utils.barcode_generate import generate_barcode
 

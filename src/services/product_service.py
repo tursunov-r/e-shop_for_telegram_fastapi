@@ -1,7 +1,6 @@
 from decimal import Decimal
 
-from fastapi import Response, Cookie, Depends
-from fastapi.security import HTTPAuthorizationCredentials
+from fastapi import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.schemas.product_schemas import (
@@ -10,8 +9,6 @@ from src.schemas.product_schemas import (
 )
 from src.repositories.product_repository import product_repository
 from src.schemas.user_schemas import TokenData
-from src.utils.auth import get_current_user, verify_token
-from src.utils.exceptions.exceptions import NotAuthorized
 
 
 class ProductService:
@@ -58,9 +55,9 @@ class ProductService:
     @staticmethod
     async def search_products(
         search: str,
-        min_price: Decimal,
-        max_price: Decimal,
         session: AsyncSession,
+        min_price: Decimal | None = None,
+        max_price: Decimal | None = None,
     ):
         result = await product_repository.search_product(
             search=search.title().strip(),

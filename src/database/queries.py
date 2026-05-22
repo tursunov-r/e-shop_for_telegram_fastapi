@@ -2,7 +2,6 @@ from src.core.db_connect import engine
 from src.models.base_model import (
     Base,
 )
-from src.repositories.user_repository import UserRepository
 
 
 async def create_tables():

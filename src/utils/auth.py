@@ -18,7 +18,7 @@ JWT_TOKEN_LOCATION = settings.JWT_TOKEN_LOCATION
 ALGORITHM = "HS256"
 
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+def create_access_token(data: dict, expires_delta: timedelta):
     """Создать JWT токен"""
     to_encode = data.copy()
     if expires_delta:

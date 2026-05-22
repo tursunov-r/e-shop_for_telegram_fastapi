@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from fastapi import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,7 +32,8 @@ class User:
         print(f"logged in {login}")
         # Создание токена
         access_token = create_access_token(
-            data={"user_id": login.id, "email": login.email}
+            data={"user_id": login.id, "email": login.email},
+            expires_delta=timedelta(),
         )
         response.set_cookie(
             key="access_token",

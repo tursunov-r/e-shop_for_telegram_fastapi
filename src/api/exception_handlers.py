@@ -1,7 +1,6 @@
 from fastapi import Request, FastAPI
 
 from fastapi.responses import JSONResponse
-from jose import JWTError
 
 from src.utils.exceptions.exceptions import (
     NotFound,

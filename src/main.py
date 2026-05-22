@@ -45,8 +45,10 @@ async def lifespan(app: FastAPI):
         await UserRepository.create_admin_query(session)
     # await create_data()
     yield
-    await http_client.aclose()
-    await db_pool.close()
+    if http_client is not None:
+        await http_client.aclose()
+    if db_pool is not None:
+        await db_pool.close()
 
 
 app = FastAPI(lifespan=lifespan)

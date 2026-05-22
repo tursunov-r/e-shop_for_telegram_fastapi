@@ -1,5 +1,4 @@
 import asyncio
-import time
 from random import choice
 
 from fastapi import Depends
