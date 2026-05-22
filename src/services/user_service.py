@@ -1,7 +1,7 @@
 from fastapi import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.utils.auth import security, config
+from src.utils.auth import create_access_token
 from src.schemas.user_schemas import (
     UserCreateSchema,
     UserLoginSchema,
@@ -27,9 +27,20 @@ class User:
         )
         if not login:
             raise InvalidCredentials("Invalid credentials")
-        token = security.create_access_token(uid="12345")
-        response.set_cookie(config.JWT_ACCESS_COOKIE_NAME, token)
-        return {"access_token": token}
+        print(f"logged in {login}")
+        # Создание токена
+        access_token = create_access_token(
+            data={"user_id": login.id, "email": login.email}
+        )
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=False,
+            samesite="Lax",
+            max_age=3600 * 24,
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
 
     @staticmethod
     async def get_users(session: AsyncSession):

@@ -17,7 +17,9 @@ from src.api.handlers.exchange import router as exchange_router
 
 # from src.database.insert_for_test import create_data
 from src.database.queries import create_tables
-from src.core.db_connect import db_pool, http_client, get_pool
+from src.core.db_connect import db_pool, http_client, get_pool, async_session
+from src.api.exception_handlers import register_exception_handlers
+from src.repositories.user_repository import UserRepository
 
 # Анализ требований проекта SFMShop:
 # - Нужен REST API для мобильного приложения, телеграм бота
@@ -39,6 +41,8 @@ from src.core.db_connect import db_pool, http_client, get_pool
 async def lifespan(app: FastAPI):
     await get_pool()
     await create_tables()
+    async with async_session() as session:
+        await UserRepository.create_admin_query(session)
     # await create_data()
     yield
     await http_client.aclose()
@@ -46,6 +50,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+register_exception_handlers(app)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)

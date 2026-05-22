@@ -1,7 +1,10 @@
+from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.user_model import UserModel
+from src.core.db_connect import get_session
+from src.core.settings import settings
+from src.models.user_model import UserModel, RoleModel
 from src.schemas.user_schemas import (
     UserCreateSchema,
     UserLoginSchema,
@@ -40,7 +43,7 @@ class UserRepository:
         if result:
             verified = verify_password(user.password, result.password)
             if verified:
-                return True
+                return result
         raise ValueError("Invalid credentials")
 
     @staticmethod
@@ -61,6 +64,33 @@ class UserRepository:
             raise ValueError("User not found")
         await session.delete(db_user)
         return db_user
+
+    @staticmethod
+    async def create_admin_query(session: AsyncSession):
+        hash_pwd = hash_password(settings.admin_password)
+
+        result = await session.execute(
+            select(UserModel).where(UserModel.email == settings.admin_email)
+        )
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            return
+
+        create_admin = UserModel(
+            email=settings.admin_email,
+            password=hash_pwd,
+            first_name=settings.admin_first_name,
+            last_name=settings.admin_last_name,
+        )
+
+        session.add(create_admin)
+        await session.flush()
+
+        role = RoleModel(user_id=create_admin.id, role="admin")
+
+        session.add(role)
+        await session.commit()
 
 
 user_repository = UserRepository()

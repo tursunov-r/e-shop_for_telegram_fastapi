@@ -53,3 +53,8 @@ class UserCreateResponseSchema(BaseModel):
 class UserLoginSchema(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
+
+
+class TokenData(BaseModel):
+    user_id: int
+    email: str

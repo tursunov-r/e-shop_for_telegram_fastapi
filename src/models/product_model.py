@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, func
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -22,11 +22,18 @@ class ProductModel(Base):
         nullable=False, default=0, server_default="0"
     )
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=datetime.now
+        nullable=False, default=func.now()
+    )
+    archived: Mapped[bool] = mapped_column(
+        default=False, server_default="false"
     )
 
     order_items = relationship("OrderItemModel", back_populates="product")
-    translate = relationship("ProductTranslate", back_populates="product")
+    translate = relationship(
+        "TranslatedProductModel",
+        back_populates="product",
+        cascade="all, delete-orphan",
+    )
     image = relationship("ProductImageModel", back_populates="product")
 
 
@@ -34,8 +41,8 @@ class ProductImageModel(Base):
     __tablename__ = "product_images"
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
-    path_to_image: Mapped[str] = mapped_column(nullable=False, default="")
-    product = relationship("ProductModel", back_populates="images")
+    path_to_image: Mapped[str] = mapped_column(nullable=True, default="")
+    product = relationship("ProductModel", back_populates="image")
 
 
 class TranslatedProductModel(Base):
