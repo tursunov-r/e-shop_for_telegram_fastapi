@@ -32,33 +32,3 @@ class OrderModel(Base):
     statuses_history = relationship(
         "StatusHistoryModel", back_populates="order"
     )
-
-
-class OrderItemModel(Base):
-    __tablename__ = "order_items"
-    order_id: Mapped[int] = mapped_column(
-        ForeignKey("orders.id"), primary_key=True, index=True
-    )
-    product_id: Mapped[int] = mapped_column(
-        ForeignKey("products.id"), primary_key=True, index=True
-    )
-    quantity: Mapped[int] = mapped_column(nullable=False, default=1)
-    total: Mapped[Decimal] = mapped_column(nullable=False, default=0)
-    order = relationship("OrderModel", back_populates="items")
-    product = relationship("ProductModel", back_populates="order_items")
-
-
-class StatusHistoryModel(Base):
-    __tablename__ = "statuses_history"
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"))
-    status: Mapped[str] = mapped_column(nullable=False, default="created")
-    at: Mapped[datetime] = mapped_column(default=func.now(), nullable=False)
-    order = relationship("OrderModel", back_populates="statuses_history")
-
-
-class PromocodeModel(Base):
-    __tablename__ = "promocodes"
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    promocode: Mapped[str] = mapped_column(nullable=True)
-    orders = relationship("OrderModel", back_populates="promocode")

@@ -6,10 +6,17 @@ from sqlalchemy import pool
 from alembic import context
 
 from src.core.settings import settings
-from src.models.order_model import OrderModel, OrderItemModel  # noqa
+from src.models.order_model import OrderModel  # noqa
 from src.models.user_model import UserModel  # noqa
 from src.models.product_model import ProductModel  # noqa
-from src.models.base_model import Base
+from src.models.address_model import AddressModel  # noqa
+from src.models.order_item_model import OrderItemModel  # noqa
+from src.models.product_image_model import ProductImageModel  # noqa
+from src.models.promocode_model import PromocodeModel  # noqa
+from src.models.role_model import RoleModel  # noqa
+from src.models.status_history_model import StatusHistoryModel  # noqa
+from src.models.translate_product_model import TranslatedProductModel  # noqa
+from src.models.base_model import Base  # noqa
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

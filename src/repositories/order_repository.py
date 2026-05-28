@@ -4,20 +4,23 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.models.order_model import OrderModel, OrderItemModel
+from src.models.order_model import OrderModel
+from src.models.order_item_model import OrderItemModel
 from src.schemas.order_schema import ProductItem
 from src.models.product_model import ProductModel
 from src.models.user_model import UserModel
+from src.schemas.user_schemas import TokenData
 from src.services.product_service import product_repository
+from src.utils.exceptions.exceptions import OrderNotFound, NotFound
 
 
 class OrderRepository:
     @staticmethod
     async def create_order_query(
-        user_id: int, products: list[ProductItem], session: AsyncSession
+        user: TokenData, products: list[ProductItem], session: AsyncSession
     ):
         try:
-            order = OrderModel(user_id=user_id, total=Decimal(0))
+            order = OrderModel(user_id=user.user_id, total=Decimal(0))
             session.add(order)
             total_sum = Decimal(0)
             for item in products:
@@ -33,7 +36,7 @@ class OrderRepository:
                 )
                 product = result.scalar_one_or_none()
                 if not product:
-                    raise ValueError("Order not found")
+                    raise NotFound("Product not found")
 
                 item_total = product.price * item.quantity
                 total_sum += item_total
@@ -48,7 +51,7 @@ class OrderRepository:
 
             order.total = total_sum
             stmt = await session.execute(
-                select(UserModel.email).where(UserModel.id == user_id)
+                select(UserModel.email).where(UserModel.id == user.user_id)
             )
             result = stmt.scalar_one_or_none()
             return order, result
@@ -60,7 +63,9 @@ class OrderRepository:
     async def get_all_orders_query(session: AsyncSession):
         result = await session.execute(select(OrderModel))
         orders = result.scalars().all()
-        return orders
+        if orders:
+            return orders
+        raise OrderNotFound("Orders not found")
 
     @staticmethod
     async def get_order_by_id_query(order_id: int, session: AsyncSession):
@@ -113,6 +118,20 @@ class OrderRepository:
         orders = result.unique().scalars().all()
         if not orders:
             raise ValueError("Order not found")
+        return orders
+
+    @staticmethod
+    async def get_user_orders_query_(user: TokenData, session: AsyncSession):
+        result = await session.execute(
+            select(OrderModel)
+            .options(
+                joinedload(OrderModel.items).joinedload(OrderItemModel.product)
+            )
+            .where(UserModel.id == user.user_id)
+        )
+        orders = result.unique().scalars().all()
+        if not orders:
+            raise OrderNotFound("Order not found")
         return orders
 
     @staticmethod

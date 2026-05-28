@@ -1,4 +1,5 @@
 import re
+from typing import List
 from decimal import Decimal
 
 from pydantic import (
@@ -37,12 +38,24 @@ class UserCreateSchema(BaseModel):
         return self
 
 
+class AddressSchema(BaseModel):
+    user_id: int = Field(ge=0)
+    title: str
+    first_name: str
+    last_name: str
+    phone: str
+    country: str
+    city: str
+    address: str
+
+
 class UserData(BaseModel):
     id: int
     first_name: str = Field(min_length=1, max_length=255)
     last_name: str = Field(min_length=1, max_length=255)
     email: EmailStr
     balance: float = Field(default=0, ge=0, le=1_000_000)
+    address: List[AddressSchema]
 
 
 class UserCreateResponseSchema(BaseModel):

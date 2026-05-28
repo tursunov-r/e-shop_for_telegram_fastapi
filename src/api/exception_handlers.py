@@ -10,6 +10,7 @@ from src.utils.exceptions.exceptions import (
     EmailAlreadyExists,
     InvalidCredentials,
     UserNotFound,
+    OrderNotFound,
 )
 from src.services.log_service import log_service
 
@@ -86,4 +87,15 @@ def register_exception_handlers(app: FastAPI):
         log_service.error(status_code=404, message=str(exc))
         return JSONResponse(
             status_code=404, content={"detail": "User not found"}
+        )
+
+    @app.exception_handler(OrderNotFound)
+    async def order_not_found_handler(
+        request: Request,
+        exc: OrderNotFound,
+    ):
+        log_service.error(status_code=404, message=str(exc))
+        return JSONResponse(
+            status_code=404,
+            content={"detail": str(exc)},
         )

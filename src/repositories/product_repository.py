@@ -5,35 +5,20 @@ from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
-from src.models.product_model import ProductModel, TranslatedProductModel
-from src.models.user_model import RoleModel
+from src.models.product_model import ProductModel
+from src.models.translate_product_model import TranslatedProductModel
 from src.schemas.product_schemas import (
     CreateProductSchema,
     UpdateProductSchema,
     TranslateProductSchema,
 )
-from src.schemas.user_schemas import TokenData
 from src.utils.exceptions.exceptions import (
     ProductAlreadyExists,
     NotFound,
-    PermissionDeniedError,
 )
 
 
 class ProductRepository:
-    @staticmethod
-    async def _check_permission(
-        session: AsyncSession,
-        user: TokenData,
-    ):
-        stmt = select(RoleModel).where(RoleModel.user_id == user.user_id)
-        result = await session.execute(stmt)
-        role = result.scalar_one_or_none()
-
-        if not role or role.role not in {"admin", "manager", "seller"}:
-            raise PermissionDeniedError("No permission to create products")
-        return
-
     @staticmethod
     async def _create_translate(
         product_id: ProductModel,
@@ -53,10 +38,8 @@ class ProductRepository:
 
     @staticmethod
     async def create_products_query(
-        product: CreateProductSchema, session: AsyncSession, user: TokenData
+        product: CreateProductSchema, session: AsyncSession
     ):
-        await ProductRepository._check_permission(session=session, user=user)
-
         check_barcode = await session.execute(
             select(ProductModel.barcode).where(
                 ProductModel.barcode == product.barcode
@@ -179,9 +162,7 @@ class ProductRepository:
         barcode: str,
         update: UpdateProductSchema,
         session: AsyncSession,
-        user: TokenData,
     ):
-        await ProductRepository._check_permission(session=session, user=user)
         result = await session.execute(
             select(ProductModel)
             .options(selectinload(ProductModel.translate))
@@ -239,11 +220,7 @@ class ProductRepository:
         return product
 
     @staticmethod
-    async def delete_product_query(
-        barcode: str, session: AsyncSession, user: TokenData
-    ):
-        await ProductRepository._check_permission(session=session, user=user)
-
+    async def delete_product_query(barcode: str, session: AsyncSession):
         result = await session.execute(
             select(ProductModel).where(
                 ProductModel.barcode == barcode.title().strip()
@@ -257,9 +234,8 @@ class ProductRepository:
 
     @staticmethod
     async def delete_product_by_id_from_db_query(
-        product_id: int, session: AsyncSession, user: TokenData
+        product_id: int, session: AsyncSession
     ):
-        await ProductRepository._check_permission(session=session, user=user)
         product = await session.execute(
             select(ProductModel).where(ProductModel.id == product_id)
         )

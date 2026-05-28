@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import ForeignKey
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -27,36 +26,10 @@ class UserModel(Base):
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, default=datetime.now
     )
+    archived: Mapped[bool] = mapped_column(
+        nullable=False, default=False, server_default="false"
+    )
 
     orders = relationship("OrderModel", back_populates="user")
     address = relationship("AddressModel", back_populates="user")
     role = relationship("RoleModel", back_populates="user")
-
-
-class AddressModel(Base):
-    __tablename__ = "addresses"
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    title: Mapped[str] = mapped_column(nullable=False)
-    first_name: Mapped[str] = mapped_column(
-        nullable=False, default=UserModel.first_name
-    )
-    last_name: Mapped[str] = mapped_column(
-        nullable=False, default=UserModel.last_name
-    )
-    phone: Mapped[str] = mapped_column(nullable=False)
-    country: Mapped[str] = mapped_column(nullable=False)
-    city: Mapped[str] = mapped_column(nullable=False)
-    address: Mapped[str] = mapped_column(nullable=False)
-
-    user = relationship("UserModel", back_populates="address")
-
-
-class RoleModel(Base):
-    __tablename__ = "roles"
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"), primary_key=True, index=True
-    )
-    role: Mapped[str] = mapped_column(nullable=False, default="user")
-
-    user = relationship("UserModel", back_populates="role")

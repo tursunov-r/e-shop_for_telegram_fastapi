@@ -2,7 +2,6 @@ from typing import List
 
 from fastapi import (
     APIRouter,
-    Response,
     Request,
     Depends,
 )
@@ -11,16 +10,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.db_connect import get_session
 from src.core.limiter import limiter
 from src.services.log_service import log_service
-from src.services.user_service import User
+from src.services.user_service import user_service
 from src.schemas.user_schemas import (
     UserCreateSchema,
     UserLoginSchema,
     UserCreateResponseSchema,
     UserData,
+    TokenData,
 )
+from src.utils.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/users", tags=["user"])
-user_service = User
 
 
 @router.post("/", response_model=UserCreateResponseSchema)
@@ -35,27 +35,14 @@ async def create_user(
     return {"message": "Created", "data": new_user}
 
 
-@router.post("/login")
-@limiter.limit("5/minute")
-async def login(
-    user: UserLoginSchema,
-    response: Response,
-    request: Request,
-    session: AsyncSession = Depends(get_session),
-):
-    result = await user_service.login_user(
-        user=user, response=response, session=session
-    )
-    log_service.info("user logged in", user=result)
-    return result
-
-
 @router.get("/", response_model=List[UserData])
 @limiter.limit("5/minute")
 async def get_users(
-    request: Request, session: AsyncSession = Depends(get_session)
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    user_token: TokenData = Depends(get_current_user),
 ):
-    users = await user_service.get_users(session=session)
+    users = await user_service.get_users(session=session, user=user_token)
     log_service.info("users fetched", users=users)
     return users
 

@@ -6,6 +6,7 @@ from src.schemas.order_schema import (
 )
 
 from src.repositories.order_repository import order_repository
+from src.schemas.user_schemas import TokenData
 from src.services.queue_producer import QueueProducer
 
 
@@ -13,10 +14,10 @@ class OrderService:
 
     @staticmethod
     async def create_order(
-        new_order: CreateOrderSchema, session: AsyncSession
+        user: TokenData, new_order: CreateOrderSchema, session: AsyncSession
     ):
         order = await order_repository.create_order_query(
-            user_id=new_order.user_id,
+            user=user,
             products=new_order.product_ids,
             session=session,
         )
@@ -57,8 +58,8 @@ class OrderService:
         return orders
 
     @staticmethod
-    async def get_user_orders(user_id: int, session: AsyncSession):
-        orders = await order_repository.get_user_orders_query(
-            user_id=user_id, session=session
+    async def get_user_orders(user: TokenData, session: AsyncSession):
+        orders = await order_repository.get_user_orders_query_(
+            user=user, session=session
         )
         return orders

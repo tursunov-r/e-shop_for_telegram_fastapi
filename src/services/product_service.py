@@ -8,6 +8,7 @@ from src.schemas.product_schemas import (
     UpdateProductSchema,
 )
 from src.repositories.product_repository import product_repository
+from src.repositories.admin_permission import admin_permission
 from src.schemas.user_schemas import TokenData
 
 
@@ -18,8 +19,9 @@ class ProductService:
         session: AsyncSession,
         user: TokenData,
     ):
+        await admin_permission.check_permission(session, user)
         new_product = await product_repository.create_products_query(
-            product=product, session=session, user=user
+            product=product, session=session
         )
 
         return {"data": new_product}
@@ -31,8 +33,9 @@ class ProductService:
         session: AsyncSession,
         user: TokenData,
     ):
+        await admin_permission.check_permission(session, user)
         update = await product_repository.update_product_query(
-            barcode=barcode, update=product, session=session, user=user
+            barcode=barcode, update=product, session=session
         )
         if update:
             return update
@@ -73,8 +76,9 @@ class ProductService:
         barcode: str,
         user: TokenData,
     ):
+        await admin_permission.check_permission(session, user)
         result = await product_repository.delete_product_query(
-            barcode=barcode, session=session, user=user
+            barcode=barcode, session=session
         )
         if not result:
             raise ValueError("Product not found")
@@ -84,7 +88,8 @@ class ProductService:
     async def delete_product_by_id(
         product_id: int, session: AsyncSession, user: TokenData
     ):
+        await admin_permission.check_permission(session, user)
         await product_repository.delete_product_by_id_from_db_query(
-            product_id=product_id, session=session, user=user
+            product_id=product_id, session=session
         )
         return Response(status_code=204)
