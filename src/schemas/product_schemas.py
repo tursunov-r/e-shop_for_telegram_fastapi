@@ -7,25 +7,32 @@ from pydantic import BaseModel, Field
 from src.utils.barcode_generate import generate_barcode
 
 
+class ProductImages(BaseModel):
+    id: int
+    path_to_image: str
+
+
 class CreateProductSchema(BaseModel):
     barcode: str = Field(default=generate_barcode(), description="Barcode")
     price: Decimal = Field(
         ge=0.00,
         max_digits=10_000_000,
         decimal_places=2,
+        default=Decimal("0.00"),
         description="The price of the product.",
     )
     purchase_price: Decimal = Field(
         ge=0.0,
         max_digits=10_000_000,
         decimal_places=2,
+        default=Decimal("0.00"),
         description="The purchase price of the product.",
     )
     stock: int = Field(
         ge=0,
         le=100_000,
-        description="The quantity of the product.",
         default=1,
+        description="The quantity of the product.",
     )
 
     translate: List["TranslateProductSchema"]
@@ -56,6 +63,7 @@ class UpdateProductSchema(BaseModel):
     )
 
     translate: List["TranslateProductSchema"] | None = None
+    images: List[ProductImages] | None = None
     archived: bool | None = None
 
     class Config:
@@ -69,7 +77,7 @@ class SearchProductSchema(BaseModel):
 
 
 class TranslateProductSchema(BaseModel):
-    lang_code: str
+    lang_code: str = Field(default="en")
     title: str
     description: str
 
@@ -82,4 +90,5 @@ class GetProductSchema(BaseModel):
     barcode: str
     quantity: int = Field(ge=0)
     translate: List[TranslateProductSchema]
+    images: List[ProductImages]
     archived: bool

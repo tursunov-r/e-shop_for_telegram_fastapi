@@ -1,6 +1,4 @@
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
 
 from src.models.address_model import AddressModel

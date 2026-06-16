@@ -12,4 +12,4 @@ class ProductImageModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
     path_to_image: Mapped[str] = mapped_column(nullable=True, default="")
-    product = relationship("ProductModel", back_populates="image")
+    product = relationship("ProductModel", back_populates="images")

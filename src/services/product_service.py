@@ -93,3 +93,6 @@ class ProductService:
             product_id=product_id, session=session
         )
         return Response(status_code=204)
+
+
+product_service = ProductService()

@@ -46,7 +46,8 @@ class UserRepository:
         query = await session.execute(
             select(UserModel).where(
                 and_(
-                    UserModel.email == user.email, UserModel.archived == False
+                    UserModel.email == user.email,
+                    UserModel.archived.is_(False),
                 )
             )
         )
@@ -65,7 +66,7 @@ class UserRepository:
         users = result.scalars().all()
         if users:
             return users
-        raise ValueError("Users not found")
+        raise UserNotFound("Users not found")
 
     @staticmethod
     async def get_profile_query(session: AsyncSession, user: TokenData):

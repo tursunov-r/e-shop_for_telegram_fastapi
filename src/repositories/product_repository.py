@@ -38,7 +38,8 @@ class ProductRepository:
 
     @staticmethod
     async def create_products_query(
-        product: CreateProductSchema, session: AsyncSession
+        product: CreateProductSchema,
+        session: AsyncSession,
     ):
         check_barcode = await session.execute(
             select(ProductModel.barcode).where(
@@ -74,8 +75,11 @@ class ProductRepository:
     async def get_all_products_from_db_query(session: AsyncSession):
         result = await session.execute(
             select(ProductModel)
-            .options(joinedload(ProductModel.translate))
-            .where(ProductModel.archived != True)
+            .options(
+                joinedload(ProductModel.translate),
+                selectinload(ProductModel.images),
+            )
+            .where(ProductModel.archived.is_(False))
         )
         product = result.unique().scalars().all()
         if result:
@@ -88,11 +92,14 @@ class ProductRepository:
     ):
         result = await session.execute(
             select(ProductModel)
-            .options(joinedload(ProductModel.translate))
+            .options(
+                selectinload(ProductModel.translate),
+                selectinload(ProductModel.images),
+            )
             .where(
                 and_(
                     ProductModel.id == product_id,
-                    ProductModel.archived != True,
+                    ProductModel.archived.is_(False),
                 )
             )
         )

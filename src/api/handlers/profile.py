@@ -9,7 +9,7 @@ from src.services.profile_service import profile_service
 from src.services.log_service import log_service
 from src.utils.auth import get_current_user
 
-router = APIRouter(prefix="/api/v1/profile", tags=["profile"])
+router = APIRouter(prefix="/api/v1/profile", tags=["profile v1"])
 
 
 @router.post("/")

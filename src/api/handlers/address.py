@@ -6,7 +6,7 @@ from src.core.db_connect import get_session
 from src.schemas.user_schemas import AddressSchema, TokenData
 from src.utils.auth import get_current_user
 
-router = APIRouter(prefix="/api/v1/address", tags=["address"])
+router = APIRouter(prefix="/api/v1/address", tags=["address v1"])
 
 
 @router.post("/", response_model=AddressSchema, status_code=201)

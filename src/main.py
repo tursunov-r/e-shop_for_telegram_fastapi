@@ -16,10 +16,11 @@ from src.api.handlers.orders import router as orders_router_v1
 from src.api.handlers.user import router as user_router
 from src.api.handlers.profile import router as profile_router
 from src.api.handlers.exchange import router as exchange_router
+from src.api.handlers.images import router as images_router
 
 # from src.database.insert_for_test import create_data
 from src.database.queries import create_tables
-from src.core.db_connect import db_pool, http_client, get_pool, async_session
+from src.core.db_connect import db_pool, http_client, get_pool
 from src.api.exception_handlers import register_exception_handlers
 
 # Анализ требований проекта SFMShop:
@@ -66,6 +67,7 @@ routers = [
     user_router,
     profile_router,
     exchange_router,
+    images_router,
 ]
 for router in routers:
     app.include_router(router)

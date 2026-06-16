@@ -1,14 +1,26 @@
+import os
+import uuid
+import json
 from decimal import Decimal
-from typing import Optional, List
+from typing import Optional, List, Annotated
 
-from fastapi import APIRouter, status, Request, Response
+from fastapi import (
+    APIRouter,
+    status,
+    Request,
+    Response,
+    UploadFile as UF,
+    File,
+    Form,
+)
 from fastapi.params import Depends
+from pydantic import WithJsonSchema
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.db_connect import get_session
 from src.schemas.user_schemas import TokenData
 from src.services.log_service import log_service
-from src.services.product_service import ProductService
+from src.services.product_service import product_service
 
 from src.schemas.product_schemas import (
     CreateProductSchema,
@@ -20,23 +32,23 @@ from src.utils.auth import get_current_user
 
 router_v1 = APIRouter(prefix="/api/v1/products", tags=["products v1"])
 
-product_service = ProductService()
+UploadFile = Annotated[
+    UF, WithJsonSchema({"type": "string", "format": "binary"})
+]
 
 
-@router_v1.post(
-    "/",
-    status_code=status.HTTP_201_CREATED,
-)
+@router_v1.post("/", status_code=status.HTTP_201_CREATED)
 @limiter.limit("30/minute")
 async def create_product(
-    product: CreateProductSchema,
     request: Request,
+    product: CreateProductSchema,
     session: AsyncSession = Depends(get_session),
     user: TokenData = Depends(get_current_user),
 ):
     """
     Create a new product
     """
+
     create = await product_service.create_product(
         product=product, session=session, user=user
     )

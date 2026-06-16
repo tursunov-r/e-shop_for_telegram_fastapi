@@ -12,7 +12,7 @@ from src.core.db_connect import get_session
 from src.services.log_service import log_service
 from src.utils.auth import get_current_user
 
-router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
+router = APIRouter(prefix="/api/v1/orders", tags=["orders v1"])
 service = OrderService()
 
 

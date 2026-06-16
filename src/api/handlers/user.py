@@ -20,7 +20,7 @@ from src.schemas.user_schemas import (
 )
 from src.utils.auth import get_current_user
 
-router = APIRouter(prefix="/api/v1/users", tags=["user"])
+router = APIRouter(prefix="/api/v1/users", tags=["user v1"])
 
 
 @router.post("/", response_model=UserCreateResponseSchema)

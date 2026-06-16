@@ -1,9 +1,9 @@
-from src.models.address_model import AddressModel
-from src.models.order_model import OrderModel
-from src.models.product_image_model import ProductImageModel
-from src.models.product_model import ProductModel
-from src.models.promocode_model import PromocodeModel
-from src.models.role_model import RoleModel
-from src.models.status_history_model import StatusHistoryModel
-from src.models.translate_product_model import TranslatedProductModel
-from src.models.user_model import UserModel
+from src.models.address_model import AddressModel  # noqa
+from src.models.order_model import OrderModel  # noqa
+from src.models.product_image_model import ProductImageModel  # noqa
+from src.models.product_model import ProductModel  # noqa
+from src.models.promocode_model import PromocodeModel  # noqa
+from src.models.role_model import RoleModel  # noqa
+from src.models.status_history_model import StatusHistoryModel  # noqa
+from src.models.translate_product_model import TranslatedProductModel  # noqa
+from src.models.user_model import UserModel  # noqa
