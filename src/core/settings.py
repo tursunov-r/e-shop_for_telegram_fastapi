@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     jwt_secret: str = "your-jwt-secret"
     JWT_ACCESS_COOKIE_NAME: str = "jwt"
-    JWT_TOKEN_LOCATION: list[str] = ["cookies"]
+    JWT_TOKEN_LOCATION: list[str] = ["headers"]
     cors_origins: list[str] = [
         "http://localhost:3000",
         "https://sfmshop.example.ru",
@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     exchangerate_api_com_key: str = "<KEY>"
     exchangerates_api_io_key: str = "<KEY>"
     openexchangerates_org_key: str = "<KEY>"
+
+    admin_email: str = "<EMAIL>"
+    admin_password: str = "<PASSWORD>"
+    admin_first_name: str = "admin"
+    admin_last_name: str = "admin"
 
     @property
     def db_url(self):

@@ -85,6 +85,7 @@ async def test_login_fail(client):
     )
     assert response.status_code == 401
     data = response.json()
+    print(data)
     assert len(data) == 1
     assert data == {"detail": "Invalid credentials"}
 

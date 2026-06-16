@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from src.services.multy_exchange_client import MultyExchangeClient
 
-router = APIRouter(prefix="/api/v1/exchange", tags=["exchange"])
+router = APIRouter(prefix="/api/v1/exchange", tags=["exchange v1"])
 
 
 @router.get("/")

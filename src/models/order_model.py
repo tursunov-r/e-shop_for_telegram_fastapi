@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, func
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -17,23 +17,18 @@ class OrderModel(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"), nullable=False, index=True
     )
-    status: Mapped[str] = mapped_column(nullable=False, default="created")
+    address_id: Mapped[int] = mapped_column(nullable=False, server_default="0")
+    promocode_id: Mapped[int] = mapped_column(
+        ForeignKey("promocodes.id"), nullable=True
+    )
     total: Mapped[Decimal] = mapped_column(nullable=False, default=0)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(
+        default=func.now(), nullable=False
+    )
 
     user = relationship("UserModel", back_populates="orders")
     items = relationship("OrderItemModel", back_populates="order")
-
-
-class OrderItemModel(Base):
-    __tablename__ = "order_items"
-    order_id: Mapped[int] = mapped_column(
-        ForeignKey("orders.id"), primary_key=True, index=True
+    promocode = relationship("PromocodeModel", back_populates="orders")
+    statuses_history = relationship(
+        "StatusHistoryModel", back_populates="order"
     )
-    product_id: Mapped[int] = mapped_column(
-        ForeignKey("products.id"), primary_key=True, index=True
-    )
-    quantity: Mapped[int] = mapped_column(nullable=False, default=1)
-    total: Mapped[Decimal] = mapped_column(nullable=False, default=0)
-    order = relationship("OrderModel", back_populates="items")
-    product = relationship("ProductModel", back_populates="order_items")

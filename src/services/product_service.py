@@ -1,16 +1,15 @@
 from decimal import Decimal
 
-from fastapi import Response, Cookie, status
+from fastapi import Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.responses import JSONResponse
 
 from src.schemas.product_schemas import (
     CreateProductSchema,
     UpdateProductSchema,
 )
-from src.utils.auth import config
 from src.repositories.product_repository import product_repository
-from src.utils.exceptions.exceptions import NotAuthorized
+from src.repositories.admin_permission import admin_permission
+from src.schemas.user_schemas import TokenData
 
 
 class ProductService:
@@ -18,30 +17,25 @@ class ProductService:
     async def create_product(
         product: CreateProductSchema,
         session: AsyncSession,
-        authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
+        user: TokenData,
     ):
-        if not authorization:
-            raise NotAuthorized("Not authorized")
-        await product_repository.create_products_query(
+        await admin_permission.check_permission(session, user)
+        new_product = await product_repository.create_products_query(
             product=product, session=session
         )
 
-        return JSONResponse(
-            status_code=status.HTTP_201_CREATED,
-            content={"message": "success"},
-        )
+        return {"data": new_product}
 
     @staticmethod
     async def update_product(
-        product_name: str,
+        barcode: str,
         product: UpdateProductSchema,
         session: AsyncSession,
-        authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
+        user: TokenData,
     ):
-        if not authorization:
-            raise NotAuthorized("Not authorized")
+        await admin_permission.check_permission(session, user)
         update = await product_repository.update_product_query(
-            product_name=product_name, update=product, session=session
+            barcode=barcode, update=product, session=session
         )
         if update:
             return update
@@ -52,8 +46,6 @@ class ProductService:
         product = await product_repository.get_product_by_id_from_db_query(
             product_id=product_id, session=session
         )
-        if not product:
-            raise ValueError("Product not found")
         return product
 
     @staticmethod
@@ -65,13 +57,13 @@ class ProductService:
 
     @staticmethod
     async def search_products(
-        title: str,
-        min_price: Decimal,
-        max_price: Decimal,
+        search: str,
         session: AsyncSession,
+        min_price: Decimal | None = None,
+        max_price: Decimal | None = None,
     ):
         result = await product_repository.search_product(
-            title=title,
+            search=search.title().strip(),
             min_price=min_price,
             max_price=max_price,
             session=session,
@@ -81,21 +73,26 @@ class ProductService:
     @staticmethod
     async def delete_product(
         session: AsyncSession,
-        product_title: str,
-        authorization: str = Cookie(None, alias=config.JWT_ACCESS_COOKIE_NAME),
+        barcode: str,
+        user: TokenData,
     ):
-        if not authorization:
-            raise NotAuthorized("Not authorized")
+        await admin_permission.check_permission(session, user)
         result = await product_repository.delete_product_query(
-            product_name=product_title, session=session
+            barcode=barcode, session=session
         )
         if not result:
             raise ValueError("Product not found")
         return Response(status_code=204)
 
     @staticmethod
-    async def delete_product_by_id(product_id: int, session: AsyncSession):
+    async def delete_product_by_id(
+        product_id: int, session: AsyncSession, user: TokenData
+    ):
+        await admin_permission.check_permission(session, user)
         await product_repository.delete_product_by_id_from_db_query(
             product_id=product_id, session=session
         )
         return Response(status_code=204)
+
+
+product_service = ProductService()

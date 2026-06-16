@@ -10,14 +10,18 @@ from slowapi.errors import RateLimitExceeded
 
 from src.core.settings import settings
 from src.core.limiter import limiter
-from src.api.handlers.products import router_v1
+from src.api.handlers.address import router as address_router
+from src.api.handlers.products import router_v1 as product_router
 from src.api.handlers.orders import router as orders_router_v1
 from src.api.handlers.user import router as user_router
+from src.api.handlers.profile import router as profile_router
 from src.api.handlers.exchange import router as exchange_router
+from src.api.handlers.images import router as images_router
 
 # from src.database.insert_for_test import create_data
 from src.database.queries import create_tables
 from src.core.db_connect import db_pool, http_client, get_pool
+from src.api.exception_handlers import register_exception_handlers
 
 # Анализ требований проекта SFMShop:
 # - Нужен REST API для мобильного приложения, телеграм бота
@@ -39,19 +43,32 @@ from src.core.db_connect import db_pool, http_client, get_pool
 async def lifespan(app: FastAPI):
     await get_pool()
     await create_tables()
+    # async with async_session() as session:
+    #     await UserRepository.create_admin_query(session)
     # await create_data()
     yield
-    await http_client.aclose()
-    await db_pool.close()
+    if http_client is not None:
+        await http_client.aclose()
+    if db_pool is not None:
+        await db_pool.close()
 
 
 app = FastAPI(lifespan=lifespan)
+register_exception_handlers(app)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 ALLOWED_ORIGINS = settings.cors_origins
 
-routers = [router_v1, orders_router_v1, user_router, exchange_router]
+routers = [
+    address_router,
+    product_router,
+    orders_router_v1,
+    user_router,
+    profile_router,
+    exchange_router,
+    images_router,
+]
 for router in routers:
     app.include_router(router)
 
